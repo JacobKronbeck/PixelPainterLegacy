@@ -1,6 +1,5 @@
-# PixelPainter
-
-A browser-based pixel art editor that allows users to create pixel art and share it with others. It is built with Vue.js and .NET Core.
+# PixelPainterLegacy
+This is a continuation project of [PixelPainter.](https://github.com/PixelPainter3-0/PixelPainter3.0) A browser-based pixel art editor that allows users to create pixel art and share it with others. It is built with Vue.js and .NET Core.
 
 ## Required IDE Setup
 
