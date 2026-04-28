@@ -15,7 +15,7 @@ services:
       - ./init.sql:/init.sql # Copies the init sql script to the container
       - ./entrypoint.sh:/entrypoint.sh # Copies the entrypoint script to the container
       # - sqlserverdata:/var/opt/mssql # Uncomment this line and volumes to persist data
-    command: ["sh", "/entrypoint.sh"] # Runs the entrypoint script on startup
+    command: ["sh", "-c", "tr -d '\r' < /entrypoint.sh > /tmp/entrypoint.sh && chmod +x /tmp/entrypoint.sh && sh /tmp/entrypoint.sh"] # Normalizes Windows line endings before running the init script
 
 # volumes: 
 #   sqlserverdata:

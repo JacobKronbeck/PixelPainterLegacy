@@ -23,6 +23,22 @@ vscode-icons
 
 ## Setup for local development
 
+### Verified local prerequisites
+
+- Node.js and npm
+- .NET 8 SDK
+- Docker Desktop with Docker Compose
+
+This repository was validated locally with:
+
+```
+node 24.x
+npm 11.x
+.NET SDK 8.0.x
+Docker 29.x
+Docker Compose 5.x
+```
+
 ### Frontend setup in VS Code
 
 1. Open the .Client project folder in VS Code by clicking 'File' -> 'Open Folder' and selecting the .Client inside the cloned repository folder
@@ -52,12 +68,54 @@ vscode-icons
 ### Backend setup in Visual Studio
 
 1. Open the .sln file in the root directory of the project in Visual Studio
-1. Create your appsettings.json file in the .server folder with key/value pairs for the following:
-	- ConnectionString
-	- ClientId
-	- ClientSecret
-	- RedirectUrl
-1. Run the project with the Start button in Visual Studio
+1. Create `MyTestVueApp.Server/appsettings.json` with the following structure:
+	```json
+	{
+	  "Logging": {
+	    "LogLevel": {
+	      "Default": "Information",
+	      "Microsoft.AspNetCore": "Warning"
+	    }
+	  },
+	  "AllowedHosts": "*",
+	  "ApplicationConfiguration": {
+	    "ConnectionString": "Server=localhost,1433;Database=PixelPainter;User Id=sa;Password=LocalPassword123;TrustServerCertificate=True;Encrypt=False;",
+	    "ClientId": "",
+	    "ClientSecret": "",
+	    "RedirectUrl": "http://localhost:5173/"
+	  }
+	}
+	```
+1. `ClientId` and `ClientSecret` are only required if you want Google login to work locally.
+1. Start the backend from Visual Studio, or from a terminal in the repository root:
+	```
+	"C:\Program Files\dotnet\dotnet.exe" run --project .\MyTestVueApp.Server\MyTestVueApp.Server.csproj --launch-profile http
+	```
+1. The backend serves locally on:
+	```
+	http://localhost:5054
+	http://0.0.0.0:7154
+	```
+
+### Full local run sequence
+
+1. Start the database from the repository root:
+	```
+	docker compose up -d
+	```
+1. Start the backend:
+	```
+	"C:\Program Files\dotnet\dotnet.exe" run --project .\MyTestVueApp.Server\MyTestVueApp.Server.csproj --launch-profile http
+	```
+1. Start the frontend from `mytestvueapp.client`:
+	```
+	npm run dev
+	```
+1. Open the URL printed by Vite, usually:
+	```
+	http://localhost:5173
+	```
+1. If Vite falls back to another port, such as `5174`, the app still runs. If you need Google login locally, also update `RedirectUrl` in `MyTestVueApp.Server/appsettings.json` to match that frontend origin.
 
 ## Missing HTTPS Certificates
 
