@@ -404,3 +404,5 @@ package-lock.json
 
 # Ignore nightwatch output files
 /mytestvueapp.client/tests_output/*
+.vercel
+.env*
