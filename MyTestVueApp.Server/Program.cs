@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using MyTestVueApp.Server.Configuration;
+using MyTestVueApp.Server.Database;
 using MyTestVueApp.Server.Interfaces;
 using MyTestVueApp.Server.ServiceImplementations;
 using MyTestVueApp.Server.Hubs;
@@ -25,6 +26,7 @@ builder.Services.AddSignalR(sig => {
 builder.Services.Configure<ApplicationConfiguration>(builder.Configuration.GetSection("ApplicationConfiguration"));
 
 //Custom Services
+builder.Services.AddTransient<IPostgresDataAccess, PostgresDataAccess>();
 builder.Services.AddTransient<IArtAccessService, ArtAccessService>();
 builder.Services.AddTransient<ILoginService, LoginService>();
 builder.Services.AddTransient<ILikeService, LikeService>();
