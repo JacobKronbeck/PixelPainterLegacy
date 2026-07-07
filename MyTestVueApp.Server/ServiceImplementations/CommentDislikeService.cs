@@ -2,7 +2,6 @@
 using MyTestVueApp.Server.Configuration;
 using MyTestVueApp.Server.Entities;
 using MyTestVueApp.Server.Interfaces;
-using Microsoft.Data.SqlClient;
 using System.Reflection.Metadata.Ecma335;
 using Microsoft.AspNetCore.DataProtection.KeyManagement;
 
@@ -30,7 +29,7 @@ namespace MyTestVueApp.Server.ServiceImplementations
                 connection.Open();
 
                 //Check to make sure the user hasnt already liked this work of art
-                var checkDupQuery = "SELECT Count(*) FROM CommentDislikes WHERE ArtistID = @ArtistId AND CommentID = @CommentId";
+                var checkDupQuery = "SELECT COUNT(*)::int FROM CommentDislikes WHERE ArtistID = @ArtistId AND CommentID = @CommentId";
                 using (SqlCommand checkDupCommand = new SqlCommand(checkDupQuery, connection))
                 {
                     checkDupCommand.Parameters.AddWithValue("@ArtistId", artist.Id);
@@ -75,7 +74,7 @@ namespace MyTestVueApp.Server.ServiceImplementations
                 connection.Open();
                 //Check to make sure dislike exists
                 //Check to make sure the user hasnt already disliked this work of art
-                var checkDupQuery = "SELECT Count(*) FROM CommentDislikes WHERE ArtistID = @ArtistId AND CommentID = @CommentId";
+                var checkDupQuery = "SELECT COUNT(*)::int FROM CommentDislikes WHERE ArtistID = @ArtistId AND CommentID = @CommentId";
                 using (SqlCommand checkDupCommand = new SqlCommand(checkDupQuery, connection))
                 {
                     checkDupCommand.Parameters.AddWithValue("@ArtistId", artist.Id);
@@ -93,7 +92,7 @@ namespace MyTestVueApp.Server.ServiceImplementations
                 using (SqlCommand command = new SqlCommand(query, connection))
                 {
                     command.Parameters.AddWithValue("@ArtistId", artist.Id);
-                    command.Parameters.AddWithValue("CommentId", commentId);
+                    command.Parameters.AddWithValue("@CommentId", commentId);
 
                     int rowsChanged = await command.ExecuteNonQueryAsync();
                     if (rowsChanged > 0)
@@ -119,7 +118,7 @@ namespace MyTestVueApp.Server.ServiceImplementations
             {
                 connection.Open();
 
-                string dislikedQuery = "SELECT Count(*) FROM CommentDislikes WHERE ArtistId = @ArtistId  AND CommentID = @CommentId";
+                string dislikedQuery = "SELECT COUNT(*)::int FROM CommentDislikes WHERE ArtistId = @ArtistId  AND CommentID = @CommentId";
                 using (SqlCommand command = new SqlCommand(dislikedQuery, connection))
                 {
                     command.Parameters.AddWithValue("@CommentID", commentId);
@@ -173,7 +172,7 @@ namespace MyTestVueApp.Server.ServiceImplementations
                                 Artist = reader.GetString(0),
                                 CommentId = reader.GetInt32(1),
                                 ArtistId = reader.GetInt32(2),
-                                Viewed = reader.GetInt32(4) == 1 ? true : false,
+                                Viewed = reader.GetInt32(3) == 1 ? true : false,
                             };
                             commentDislikes.Add(commentDislike);
                         }

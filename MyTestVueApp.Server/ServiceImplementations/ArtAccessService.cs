@@ -1,5 +1,4 @@
 using ImageMagick;
-using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Options;
 using MyTestVueApp.Server.Configuration;
 using MyTestVueApp.Server.Entities;
@@ -50,9 +49,9 @@ namespace MyTestVueApp.Server.ServiceImplementations
                         Art.CreationDate, 
                         Art.isPublic, 
                         Art.IsGIF,
-                        COUNT(distinct Likes.ArtistId) as Likes, 
-                        COUNT(distinct Dislikes.ArtistId) as Dislikes,
-                        COUNT(distinct Comment.Id) as Comments,
+                        COUNT(distinct Likes.ArtistId)::int as Likes,
+                        COUNT(distinct Dislikes.ArtistId)::int as Dislikes,
+                        COUNT(distinct Comment.Id)::int as Comments,
                         Art.gifId,
                         Art.gifFrameNum,
                         Art.pointId
@@ -124,13 +123,13 @@ namespace MyTestVueApp.Server.ServiceImplementations
                         Art.isPublic,
                         Art.IsGIF,
                         Art.GifId,
-                        COUNT(distinct Likes.ArtistId) as Likes, 
-                        COUNT(distinct Dislikes.ArtistId) as Dislikes,
-                        Count(distinct Comment.Id) as Comments, 
+                        COUNT(distinct Likes.ArtistId)::int as Likes,
+                        COUNT(distinct Dislikes.ArtistId)::int as Dislikes,
+                        Count(distinct Comment.Id)::int as Comments,
                         Art.PointId,
-                        ISNULL(Points.Title, '') as PointTitle,
-                        ISNULL(Points.ArtspaceId, 0),
-                        ISNULL(Artspace.Title, '')
+                        COALESCE(Points.Title, '') as PointTitle,
+                        COALESCE(Points.ArtspaceId, 0),
+                        COALESCE(Artspace.Title, '')
                     FROM ART  
                     LEFT JOIN Likes ON Art.ID = Likes.ArtID  
                     LEFT JOIN Dislikes on Art.ID = Dislikes.ArtID
@@ -208,9 +207,9 @@ namespace MyTestVueApp.Server.ServiceImplementations
 	                    Art.CreationDate, 
 	                    Art.isPublic, 
 						Art.IsGIF,
-	                    COUNT(distinct Likes.ArtistId) as Likes, 
-                        COUNT(distinct Dislikes.ArtistId) as Dislikes,
-	                    Count(distinct Comment.Id) as Comments,
+	                    COUNT(distinct Likes.ArtistId)::int as Likes,
+                        COUNT(distinct Dislikes.ArtistId)::int as Dislikes,
+	                    Count(distinct Comment.Id)::int as Comments,
                         Art.gifId,
                         Art.gifFrameNum
                     FROM ART  
@@ -285,9 +284,9 @@ namespace MyTestVueApp.Server.ServiceImplementations
                 A.IsGIF,
                 A.GifId,
                 A.gifFrameNum,
-                COUNT(DISTINCT AL.ArtistId) AS Likes,
-                COUNT(DISTINCT DL.ArtistId) AS Dislikes,
-                COUNT(DISTINCT C.Id)        AS Comments
+                COUNT(DISTINCT AL.ArtistId)::int AS Likes,
+                COUNT(DISTINCT DL.ArtistId)::int AS Dislikes,
+                COUNT(DISTINCT C.Id)::int        AS Comments
             FROM Likes L
             JOIN Art A              ON A.Id   = L.ArtId
             LEFT JOIN Likes    AL   ON AL.ArtId = A.Id
@@ -359,10 +358,12 @@ namespace MyTestVueApp.Server.ServiceImplementations
 	                      Art.Encode, 
 	                      Art.CreationDate,
 	                      Art.isPublic,
-	                      COUNT(distinct Dislikes.ArtistId) as Dislikes, 
-	                      Count(distinct Comment.Id) as Comments
+	                      COUNT(distinct AL.ArtistId)::int as Likes,
+	                      COUNT(distinct Dislikes.ArtistId)::int as Dislikes,
+	                      Count(distinct Comment.Id)::int as Comments
                       FROM Dislikes
                       left join Art on Art.Id = Dislikes.ArtId
+                      LEFT JOIN Likes AL ON AL.ArtId = Art.Id
                       LEFT JOIN Comment ON Art.ID = Comment.ArtID
                       where Dislikes.ArtistId = @ArtistId
                       GROUP BY Dislikes.ArtistId, Dislikes.ArtId, Art.ID, Art.Title, Art.Width, Art.Height, Art.Encode, Art.CreationDate, Art.isPublic;
@@ -388,8 +389,8 @@ namespace MyTestVueApp.Server.ServiceImplementations
                                 PixelGrid = pixelGrid,
                                 CreationDate = reader.GetDateTime(5),
                                 IsPublic = reader.GetBoolean(6),
-                                NumDislikes = reader.GetInt32(7),
-                                NumLikes = reader.GetInt32(8),
+                                NumLikes = reader.GetInt32(7),
+                                NumDislikes = reader.GetInt32(8),
                                 NumComments = reader.GetInt32(9)
                             };
                             paintings.Add(painting);
@@ -419,8 +420,8 @@ namespace MyTestVueApp.Server.ServiceImplementations
                     // Insert Art and get new ID
                     var insertArtQuery = @"
                 INSERT INTO Art (Title, Width, Height, Encode, CreationDate, IsPublic)
-                VALUES (@Title, @Width, @Height, @Encode, @CreationDate, @IsPublic);
-                SELECT SCOPE_IDENTITY();
+                VALUES (@Title, @Width, @Height, @Encode, @CreationDate, @IsPublic)
+                RETURNING Id;
             ";
                     using (var command = new SqlCommand(insertArtQuery, connection))
                     {
@@ -473,8 +474,8 @@ namespace MyTestVueApp.Server.ServiceImplementations
                     connection.Open();
 
                     var query = @"
-                    INSERT INTO Gif(FPS) values (@FPS);
-                    SELECT SCOPE_IDENTITY();
+                    INSERT INTO Gif(FPS) values (@FPS)
+                    RETURNING Id;
                 ";
                     using (var command = new SqlCommand(query, connection))
                     {
@@ -497,10 +498,16 @@ namespace MyTestVueApp.Server.ServiceImplementations
                             connection.Open();
 
                             var query = @"
-                    INSERT INTO Art (Title, Width, Height, Encode, CreationDate, IsPublic, IsGIF, gifId,gifFrameNum)
-                    VALUES (@Title, @Width, @Height, @Encode, @CreationDate, @IsPublic,1,@gifNum,@frameNum);
-                    SELECT SCOPE_IDENTITY();
-                    INSERT INTO ContributingArtists(ArtId,ArtistId) values (@@IDENTITY,@ArtistId);";
+                    WITH inserted_art AS (
+                        INSERT INTO Art (Title, Width, Height, Encode, CreationDate, IsPublic, IsGIF, gifId,gifFrameNum)
+                        VALUES (@Title, @Width, @Height, @Encode, @CreationDate, @IsPublic,true,@gifNum,@frameNum)
+                        RETURNING Id
+                    ),
+                    inserted_artist AS (
+                        INSERT INTO ContributingArtists(ArtId,ArtistId)
+                        SELECT Id, @ArtistId FROM inserted_art
+                    )
+                    SELECT Id FROM inserted_art;";
                             using (var command = new SqlCommand(query, connection))
                             {
                                 command.Parameters.AddWithValue("@Title", item.Title);
@@ -526,9 +533,8 @@ namespace MyTestVueApp.Server.ServiceImplementations
 
                             var query = @"
                     INSERT INTO Art (Title, Width, Height, Encode, CreationDate, IsPublic, IsGIF, gifId,gifFrameNum)
-                    VALUES (@Title, @Width, @Height, @Encode, @CreationDate, @IsPublic,1,@gifNum,@frameNum);
-                    SELECT SCOPE_IDENTITY();
-                    ;";
+                    VALUES (@Title, @Width, @Height, @Encode, @CreationDate, @IsPublic,true,@gifNum,@frameNum)
+                    RETURNING Id;";
                             using (var command = new SqlCommand(query, connection))
                             {
                                 command.Parameters.AddWithValue("@Title", item.Title);
@@ -638,8 +644,8 @@ namespace MyTestVueApp.Server.ServiceImplementations
 
                     var query = @"
                     INSERT INTO Art (Title, Width, Height, Encode, CreationDate, IsPublic)
-                    VALUES (@Title, @Width, @Height, @Encode, @CreationDate, @IsPublic);
-                    SELECT SCOPE_IDENTITY();
+                    VALUES (@Title, @Width, @Height, @Encode, @CreationDate, @IsPublic)
+                    RETURNING Id;
                 ";
                     using (var command = new SqlCommand(query, connection))
                     {
@@ -783,7 +789,7 @@ namespace MyTestVueApp.Server.ServiceImplementations
                 {
                     connection.Open();
 
-                    var deleteArtQuery = "DELETE art where art.id = @ArtId";
+                    var deleteArtQuery = "DELETE FROM Art WHERE Id = @ArtId";
                     using (SqlCommand deleteArtCommand = new SqlCommand(deleteArtQuery, connection))
                     {
                         deleteArtCommand.Parameters.AddWithValue("@ArtId", ArtId);
@@ -850,7 +856,7 @@ namespace MyTestVueApp.Server.ServiceImplementations
                 {
                     connection.Open();
 
-                    var deleteConArtQuery = "DELETE ContributingArtists where ArtId = @ArtId and ArtistId = @ArtistId;";
+                    var deleteConArtQuery = "DELETE FROM ContributingArtists WHERE ArtId = @ArtId AND ArtistId = @ArtistId;";
                     using (SqlCommand deleteConArtCommand = new SqlCommand(deleteConArtQuery, connection))
                     {
                         deleteConArtCommand.Parameters.AddWithValue("@ArtId", ArtId);

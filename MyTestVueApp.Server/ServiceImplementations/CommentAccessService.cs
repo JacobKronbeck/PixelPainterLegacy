@@ -2,7 +2,6 @@
 using MyTestVueApp.Server.Configuration;
 using MyTestVueApp.Server.Entities;
 using MyTestVueApp.Server.Interfaces;
-using Microsoft.Data.SqlClient;
 using Microsoft.AspNetCore.Mvc;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Oauth2.v2.Data;
@@ -47,12 +46,12 @@ namespace MyTestVueApp.Server.ServiceImplementations
                         Comment.Id, 
                         Comment.ArtistId, 
                         Comment.ArtID, 
-                        Comment.[Message],
-	                    Artist.[Name] as CommenterName,
+                        Comment.Message,
+	                    Artist.Name as CommenterName,
                         Comment.CreationDate,
                         Comment.ReplyId,
-                        COUNT(DISTINCT CommentLikes.ArtistId) as CommentLikes,
-                        Count(DISTINCT CommentDislikes.ArtistId) as CommentDislikes,
+                        COUNT(DISTINCT CommentLikes.ArtistId)::int as CommentLikes,
+                        Count(DISTINCT CommentDislikes.ArtistId)::int as CommentDislikes,
                         Comment.Viewed
                     FROM Comment  
                     JOIN Artist ON Artist.id = Comment.ArtistId
@@ -63,8 +62,8 @@ namespace MyTestVueApp.Server.ServiceImplementations
                         Comment.Id, 
                         Comment.ArtistId, 
                         Comment.ArtID, 
-                        Comment.[Message],
-                        Artist.[Name],
+                        Comment.Message,
+                        Artist.Name,
                         Comment.CreationDate,
                         Comment.ReplyId,
                         Comment.Viewed
@@ -117,7 +116,7 @@ namespace MyTestVueApp.Server.ServiceImplementations
                 connection.Open();
 
                 //Check to make sure the user hasnt already liked this work of art
-                var checkDupQuery = "SELECT Count(*) FROM comment WHERE ID = @CommentId";
+                var checkDupQuery = "SELECT COUNT(*)::int FROM comment WHERE ID = @CommentId";
                 using (SqlCommand checkDupCommand = new SqlCommand(checkDupQuery, connection))
                 {
                     checkDupCommand.Parameters.AddWithValue("@CommentId", commentId);
@@ -168,7 +167,7 @@ namespace MyTestVueApp.Server.ServiceImplementations
                 connection.Open();
 
                 //Check to make sure the there is a comment to delete
-                var checknullQuery = "SELECT Count(*) FROM comment WHERE ID = @CommentId";
+                var checknullQuery = "SELECT COUNT(*)::int FROM comment WHERE ID = @CommentId";
                 using (SqlCommand checkDupCommand = new SqlCommand(checknullQuery, connection))
                 {
                     checkDupCommand.Parameters.AddWithValue("@CommentId", commentId);
@@ -185,15 +184,15 @@ namespace MyTestVueApp.Server.ServiceImplementations
                         return 0;
                     }
                 }
-                var checkResponseQuery = "SELECT Count(*) FROM comment WHERE ReplyId = @CommentId";
-                using (SqlCommand checkResponseCommand = new SqlCommand(checknullQuery, connection))
+                var checkResponseQuery = "SELECT COUNT(*)::int FROM comment WHERE ReplyId = @CommentId";
+                using (SqlCommand checkResponseCommand = new SqlCommand(checkResponseQuery, connection))
                 {
                     checkResponseCommand.Parameters.AddWithValue("@CommentId", commentId);
 
                     int count = (int)await checkResponseCommand.ExecuteScalarAsync();
                     if (count > 0)
                     {
-                        var subquery = "DELETE Comment WHERE ReplyId = @commentId";
+                        var subquery = "DELETE FROM Comment WHERE ReplyId = @commentId";
                         using (SqlCommand DeleteResponse = new SqlCommand(subquery, connection))
                         {
                             DeleteResponse.Parameters.AddWithValue("@CommentId", commentId);
@@ -207,7 +206,7 @@ namespace MyTestVueApp.Server.ServiceImplementations
                     }
                 }
                 //update table here
-                var query = "Delete Comment WHERE ID = @CommentId";
+                var query = "DELETE FROM Comment WHERE ID = @CommentId";
                 using (SqlCommand command = new SqlCommand(query, connection))
                 {
                     command.Parameters.AddWithValue("@CommentId", commentId);
@@ -243,7 +242,7 @@ namespace MyTestVueApp.Server.ServiceImplementations
                 try
                 {
                     connection.Open();
-                    var insertQuery = "INSERT INTO Comment (ArtistId,ArtId,ReplyId,Message,CreationDate) VALUES (@ArtistID,@ArtID,@replyID,@Message,@CreationDate)";
+                    var insertQuery = "INSERT INTO Comment (ArtistId,ArtId,ReplyId,Message,CreationDate) VALUES (@ArtistID,@ArtID,@replyID,@Message,@CreationDate) RETURNING Id";
                     using (SqlCommand command = new SqlCommand(insertQuery, connection))
                     {
                         command.Parameters.AddWithValue("@ArtistID", commenter.Id);
@@ -252,7 +251,7 @@ namespace MyTestVueApp.Server.ServiceImplementations
                         command.Parameters.AddWithValue("@Message", comment.Message);
                         command.Parameters.AddWithValue("@CreationDate", DateTime.UtcNow);
 
-                        var newId = await command.ExecuteNonQueryAsync();
+                        var newId = await command.ExecuteScalarAsync();
                         comment.Id = Convert.ToInt32(newId);
 
                         return comment;
@@ -285,7 +284,7 @@ namespace MyTestVueApp.Server.ServiceImplementations
                 try
                 {
                     connection.Open();
-                    var insertQuery = "INSERT INTO Comment (ArtistId,ArtId,ReplyId,Message,CreationDate) VALUES (@ArtistID,@ArtID,@replyID,@Message,@CreationDate)";
+                    var insertQuery = "INSERT INTO Comment (ArtistId,ArtId,ReplyId,Message,CreationDate) VALUES (@ArtistID,@ArtID,@replyID,@Message,@CreationDate) RETURNING Id";
                     using (SqlCommand command = new SqlCommand(insertQuery, connection))
                     {
                         command.Parameters.AddWithValue("@ArtistID", commenter.Id);
@@ -294,7 +293,7 @@ namespace MyTestVueApp.Server.ServiceImplementations
                         command.Parameters.AddWithValue("@Message", comment1.Message);
                         command.Parameters.AddWithValue("@CreationDate", DateTime.UtcNow);
 
-                        var newId = await command.ExecuteNonQueryAsync();
+                        var newId = await command.ExecuteScalarAsync();
                         comment1.Id = Convert.ToInt32(newId);
 
                         return comment1;
@@ -329,18 +328,27 @@ namespace MyTestVueApp.Server.ServiceImplementations
                         Comment.Id, 
                         Comment.ArtistId, 
                         Comment.ArtID, 
-                        Comment.[Message],
-	                    Artist.[Name] as CommenterName,
+                        Comment.Message,
+	                    Artist.Name as CommenterName,
                         Comment.CreationDate,
                         Comment.ReplyId,
-                        COUNT(DISTINCT CommentLikes.ArtistId) as CommentLikes,
-                        Count(DISTINCT CommentDislikes.ArtistId) as CommentDislikes,
+                        COUNT(DISTINCT CommentLikes.ArtistId)::int as CommentLikes,
+                        Count(DISTINCT CommentDislikes.ArtistId)::int as CommentDislikes,
                         Comment.Viewed
                     FROM Comment  
                     JOIN Artist ON Artist.id = Comment.ArtistId
 	                LEFT JOIN CommentLikes ON Comment.ID = CommentLikes.CommentID  
 	                LEFT JOIN CommentDislikes ON Comment.ID = CommentDislikes.CommentID  
-                    WHERE Comment.Id = @id;";
+                    WHERE Comment.Id = @id
+                    GROUP BY
+                        Comment.Id,
+                        Comment.ArtistId,
+                        Comment.ArtID,
+                        Comment.Message,
+                        Artist.Name,
+                        Comment.CreationDate,
+                        Comment.ReplyId,
+                        Comment.Viewed;";
 
                     using (var command = new SqlCommand(query, connection))
                     {
@@ -393,18 +401,27 @@ namespace MyTestVueApp.Server.ServiceImplementations
                         Comment.Id, 
                         Comment.ArtistId, 
                         Comment.ArtID, 
-                        Comment.[Message],
-	                    Artist.[Name] as CommenterName,
+                        Comment.Message,
+	                    Artist.Name as CommenterName,
                         Comment.CreationDate,
                         Comment.ReplyId,
-                        COUNT(DISTINCT CommentLikes.ArtistId) as CommentLikes,
-                        Count(DISTINCT CommentDislikes.ArtistId) as CommentDislikes,
+                        COUNT(DISTINCT CommentLikes.ArtistId)::int as CommentLikes,
+                        Count(DISTINCT CommentDislikes.ArtistId)::int as CommentDislikes,
                         Comment.Viewed
                     FROM Comment  
                     JOIN Artist ON Artist.id = Comment.ArtistId
 	                LEFT JOIN CommentLikes ON Comment.ID = CommentLikes.CommentID  
 	                LEFT JOIN CommentDislikes ON Comment.ID = CommentDislikes.CommentID  
-                    WHERE Comment.ArtistId = @id;";
+                    WHERE Comment.ArtistId = @id
+                    GROUP BY
+                        Comment.Id,
+                        Comment.ArtistId,
+                        Comment.ArtID,
+                        Comment.Message,
+                        Artist.Name,
+                        Comment.CreationDate,
+                        Comment.ReplyId,
+                        Comment.Viewed;";
 
                     using (var command = new SqlCommand(query, connection))
                     {
@@ -457,18 +474,27 @@ namespace MyTestVueApp.Server.ServiceImplementations
                         Comment.Id, 
                         Comment.ArtistId, 
                         Comment.ArtID, 
-                        Comment.[Message],
-	                    Artist.[Name] as CommenterName,
+                        Comment.Message,
+	                    Artist.Name as CommenterName,
                         Comment.CreationDate,
                         Comment.ReplyId,
-                        COUNT(DISTINCT CommentLikes.ArtistId) as CommentLikes,
-                        Count(DISTINCT CommentDislikes.ArtistId) as CommentDislikes,
+                        COUNT(DISTINCT CommentLikes.ArtistId)::int as CommentLikes,
+                        Count(DISTINCT CommentDislikes.ArtistId)::int as CommentDislikes,
                         Comment.Viewed
                     FROM Comment  
                     JOIN Artist ON Artist.id = Comment.ArtistId
 	                LEFT JOIN CommentLikes ON Comment.ID = CommentLikes.CommentID  
 	                LEFT JOIN CommentDislikes ON Comment.ID = CommentDislikes.CommentID  
-                    WHERE Comment.ReplyId = @id;";
+                    WHERE Comment.ReplyId = @id
+                    GROUP BY
+                        Comment.Id,
+                        Comment.ArtistId,
+                        Comment.ArtID,
+                        Comment.Message,
+                        Artist.Name,
+                        Comment.CreationDate,
+                        Comment.ReplyId,
+                        Comment.Viewed;";
 
                     using (var command = new SqlCommand(query, connection))
                     {
@@ -486,7 +512,7 @@ namespace MyTestVueApp.Server.ServiceImplementations
                                     CommenterName = reader.GetString(4),
                                     CreationDate = reader.GetDateTime(5),
                                     ReplyId = reader.IsDBNull(6) ? -1 : reader.GetInt32(6),
-                                    Viewed = reader.GetInt32(7) == 0 ? false : true
+                                    Viewed = reader.GetInt32(9) == 0 ? false : true
                                 };
                                 comments.Add(comment);
                             }
