@@ -2,7 +2,6 @@
 using MyTestVueApp.Server.Configuration;
 using MyTestVueApp.Server.Entities;
 using MyTestVueApp.Server.Interfaces;
-using Microsoft.Data.SqlClient;
 using System.Reflection.Metadata.Ecma335;
 using Microsoft.AspNetCore.DataProtection.KeyManagement;
 
@@ -31,7 +30,7 @@ namespace MyTestVueApp.Server.ServiceImplementations
                     connection.Open();
 
                     //Check to make sure the user hasnt already liked this work of art
-                    var checkDupQuery = "SELECT Count(*) FROM Dislikes WHERE ArtistID = @ArtistId AND ArtID = @ArtId";
+                    var checkDupQuery = "SELECT COUNT(*)::int FROM Dislikes WHERE ArtistID = @ArtistId AND ArtID = @ArtId";
                     using (SqlCommand checkDupCommand = new SqlCommand(checkDupQuery, connection))
                     {
                         checkDupCommand.Parameters.AddWithValue("@ArtistId", artist.Id);
@@ -77,7 +76,7 @@ namespace MyTestVueApp.Server.ServiceImplementations
                     connection.Open();
                     //Check to make sure dislike exists
                     //Check to make sure the user hasnt already disliked this work of art
-                    var checkDupQuery = "SELECT Count(*) FROM Dislikes WHERE ArtistID = @ArtistId AND ArtID = @ArtId";
+                    var checkDupQuery = "SELECT COUNT(*)::int FROM Dislikes WHERE ArtistID = @ArtistId AND ArtID = @ArtId";
                     using (SqlCommand checkDupCommand = new SqlCommand(checkDupQuery, connection))
                     {
                         checkDupCommand.Parameters.AddWithValue("@ArtistId", artist.Id);
@@ -122,7 +121,7 @@ namespace MyTestVueApp.Server.ServiceImplementations
                 {
                     connection.Open();
 
-                    string dislikedQuery = "SELECT Count(*) FROM Dislikes WHERE ArtistId = @ArtistId AND ArtID = @ArtID";
+                    string dislikedQuery = "SELECT COUNT(*)::int FROM Dislikes WHERE ArtistId = @ArtistId AND ArtID = @ArtID";
                     using (SqlCommand command = new SqlCommand(dislikedQuery, connection))
                     {
                         command.Parameters.AddWithValue("@ArtistId", artist.Id);

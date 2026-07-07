@@ -1,8 +1,7 @@
-using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Options;
 using MyTestVueApp.Server.Configuration;
 using MyTestVueApp.Server.Entities;
 using MyTestVueApp.Server.Interfaces;
-using Microsoft.Data.SqlClient;
 using System.Reflection.Metadata.Ecma335;
 using Microsoft.AspNetCore.DataProtection.KeyManagement;
 
@@ -31,7 +30,7 @@ namespace MyTestVueApp.Server.ServiceImplementations
                 connection.Open();
 
                 //Check to make sure the user hasnt already liked this work of art
-                var checkDupQuery = "SELECT Count(*) FROM Likes WHERE ArtistID = @ArtistId AND ArtID = @ArtId";
+                var checkDupQuery = "SELECT COUNT(*)::int FROM Likes WHERE ArtistID = @ArtistId AND ArtID = @ArtId";
                 using (SqlCommand checkDupCommand = new SqlCommand(checkDupQuery, connection))
                 {
                     checkDupCommand.Parameters.AddWithValue("@ArtistId", artist.Id);
@@ -75,7 +74,7 @@ namespace MyTestVueApp.Server.ServiceImplementations
                 connection.Open();
                 //Check to make sure like exists
                  //Check to make sure the user hasnt already liked this work of art
-                var checkDupQuery = "SELECT Count(*) FROM Likes WHERE ArtistID = @ArtistId AND ArtID = @ArtId";
+                var checkDupQuery = "SELECT COUNT(*)::int FROM Likes WHERE ArtistID = @ArtistId AND ArtID = @ArtId";
                 using (SqlCommand checkDupCommand = new SqlCommand(checkDupQuery, connection))
                 {
                     checkDupCommand.Parameters.AddWithValue("@ArtistId", artist.Id);
@@ -117,7 +116,7 @@ namespace MyTestVueApp.Server.ServiceImplementations
             {
                 connection.Open();
 
-                string likedQuery = "SELECT Count(*) FROM Likes WHERE ArtistId = @ArtistId AND ArtID = @ArtID";
+                string likedQuery = "SELECT COUNT(*)::int FROM Likes WHERE ArtistId = @ArtistId AND ArtID = @ArtID";
                 using (SqlCommand command = new SqlCommand(likedQuery, connection))
                 {
                     command.Parameters.AddWithValue("@ArtistId", artist.Id);

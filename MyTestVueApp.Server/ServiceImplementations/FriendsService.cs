@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc.Diagnostics;
-using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Options;
 using Microsoft.Identity.Client;
 using MyTestVueApp.Server.Configuration;
@@ -30,7 +29,7 @@ namespace MyTestVueApp.Server.ServiceImplementations
                 connection.Open();
 
                 //Check to make sure the users aren't already friends
-                var checkDupQuery = "SELECT Count(*) FROM Friends WHERE ((Friend1Id = @Friend1Id AND Friend2Id = @Friend2Id))";
+                var checkDupQuery = "SELECT COUNT(*)::int FROM Friends WHERE ((Friend1Id = @Friend1Id AND Friend2Id = @Friend2Id))";
                 using (SqlCommand checkDupCommand = new SqlCommand(checkDupQuery, connection))
                 {
                     checkDupCommand.Parameters.AddWithValue("@Friend1Id", artist1.Id);
@@ -73,7 +72,7 @@ namespace MyTestVueApp.Server.ServiceImplementations
                 connection.Open();
 
                 //Check to make sure the users are friends
-                var checkDupQuery = "SELECT Count(*) FROM Friends WHERE ((Friend1Id = @Friend1Id AND Friend2Id = @Friend2Id))";
+                var checkDupQuery = "SELECT COUNT(*)::int FROM Friends WHERE ((Friend1Id = @Friend1Id AND Friend2Id = @Friend2Id))";
 
                 using (SqlCommand checkDupCommand = new SqlCommand(checkDupQuery, connection))
                 {

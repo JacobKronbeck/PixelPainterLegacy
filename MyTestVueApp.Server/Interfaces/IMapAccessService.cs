@@ -1,6 +1,5 @@
-using System.Drawing;
+﻿using System.Drawing;
 using System.Net.NetworkInformation;
-using Microsoft.Data.SqlClient;
 using MyTestVueApp.Server.Entities;
 using Point = MyTestVueApp.Server.Entities.Point;
 using Artspace = MyTestVueApp.Server.Entities.Artspace;
