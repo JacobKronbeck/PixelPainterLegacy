@@ -6,6 +6,6 @@
     "preview": "npm run preview --prefix mytestvueapp.client"
   },
   "engines": {
-    "node": "20.x"
+    "node": "24.x"
   }
 }
