@@ -38,8 +38,6 @@ const props = defineProps<{
 
 const gridTools = ["Pan","Brush","Pipette"];
 
-const model = defineModel<PainterTool>({
-  default: PainterTool.getDefaults()[0]
-});
+const model = defineModel<PainterTool>({ required: true });
 </script>
 

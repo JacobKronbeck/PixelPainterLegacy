@@ -11,8 +11,6 @@ import { OutlineFilter } from "@pixi/filter-outline";
 import { Viewport } from "pixi-viewport"; // create viewport
 import { onMounted, watch, ref } from "vue";
 import { PixelGrid } from "@/entities/PixelGrid";
-import PainterTool from "@/entities/PainterTool";
-import { Vector2 } from "@/entities/Vector2";
 import Cursor from "@/entities/Cursor";
 import { useLayerStore } from "@/store/LayerStore";
 
@@ -38,14 +36,7 @@ defineExpose({
 });
 
 //model
-const cursor = defineModel<Cursor>({
-  default: new Cursor(
-    new Vector2(0, 0),
-    PainterTool.getDefaults()[1],
-    1,
-    "#000000"
-  )
-});
+const cursor = defineModel<Cursor>({ required: true });
 
 let isDragging = false;
 let dragStart = { x: 0, y: 0 }

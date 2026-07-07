@@ -1,11 +1,11 @@
 {
-  "dependencies": {
-    "gifencoder": "^2.0.1",
-    "leaflet": "^1.9.4",
-    "pixi-viewport": "^5.0.2"
+  "private": true,
+  "scripts": {
+    "build": "npm run build --prefix mytestvueapp.client",
+    "dev": "npm run dev --prefix mytestvueapp.client",
+    "preview": "npm run preview --prefix mytestvueapp.client"
   },
-  "devDependencies": {
-    "@types/leaflet": "^1.9.21",
-    "@types/omggif": "^1.0.5"
+  "engines": {
+    "node": "20.x"
   }
 }
