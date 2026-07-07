@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Options;
 using MyTestVueApp.Server.Configuration;
 using MyTestVueApp.Server.Entities;
 using MyTestVueApp.Server.Interfaces;
@@ -7,8 +7,6 @@ using Google.Apis.Auth.OAuth2;
 using Google.Apis.Oauth2.v2.Data;
 using Google.Apis.Oauth2.v2;
 using Google.Apis.Services;
-using Microsoft.Identity.Client;
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Components.Web.Virtualization;
 using System.ComponentModel.Design;
 using System.Xml.Linq;

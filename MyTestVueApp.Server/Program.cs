@@ -4,6 +4,7 @@ using MyTestVueApp.Server.Database;
 using MyTestVueApp.Server.Interfaces;
 using MyTestVueApp.Server.ServiceImplementations;
 using MyTestVueApp.Server.Hubs;
+using Microsoft.OpenApi.Models;
 using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -15,6 +16,12 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "Pixel Painter Legacy API",
+        Version = "v1",
+        Description = "ASP.NET Core API for Pixel Painter Legacy accounts, artwork, comments, reactions, notifications, tags, and map points."
+    });
     c.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory,
         $"{Assembly.GetExecutingAssembly().GetName().Name}.xml"));
 });

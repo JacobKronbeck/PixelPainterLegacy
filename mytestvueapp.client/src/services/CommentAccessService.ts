@@ -1,9 +1,10 @@
+import { apiFetch } from './apiClient';
 import Comment from "../entities/Comment";
 
 export default class CommentAccessService {
   public static async getCommentsByArtId(artId: number): Promise<Comment[]> {
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         `/comment/GetCommentsByArtId?artId=${artId}`
       );
       const jsonComments = await response.json();
@@ -24,7 +25,7 @@ export default class CommentAccessService {
 
   public static async getCommentsByReplyId(ReplyId: number): Promise<Comment[]> {
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         `/comment/GetCommentsByReplyId?replyId=${ReplyId}`
       );
       const jsonComments = await response.json();
@@ -47,7 +48,7 @@ export default class CommentAccessService {
     try {
       comment.creationDate = new Date().toISOString();
 
-      const response = await fetch("/comment/CreateComment", {
+      const response = await apiFetch("/comment/CreateComment", {
         method: "POST",
         body: JSON.stringify(comment),
         headers: { "Content-Type": "application/json" },
@@ -73,7 +74,7 @@ export default class CommentAccessService {
         ...comment,
         message: newMessage
       }
-      await fetch(
+      await apiFetch(
         '/comment/EditComment?commentId', {
           method: "PUT",
           body: JSON.stringify(altComment),
@@ -86,7 +87,7 @@ export default class CommentAccessService {
   }
   public static async deleteComment(commentId: number): Promise<void> {
     try {
-      await fetch(
+      await apiFetch(
         `/comment/DeleteComment?commentId=${commentId}`, {
           method: "DELETE",
           headers: { "Content-Type": "application/json" }

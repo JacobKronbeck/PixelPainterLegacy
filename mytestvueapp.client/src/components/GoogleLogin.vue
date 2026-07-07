@@ -12,6 +12,7 @@ import { onMounted, ref } from "vue";
 import router from "@/router";
 import LoginService from "@/services/LoginService";
 import Artist from "@/entities/Artist";
+import { apiUrl } from "@/services/apiClient";
 
 const isLoggedIn = ref<boolean>(false);
 
@@ -32,6 +33,6 @@ function buttonClick(): void {
 }
 
 function login(): void {
-  window.location.replace("/login/Login");
+  window.location.replace(apiUrl("/login/Login"));
 }
 </script>

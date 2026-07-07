@@ -1,6 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
 using MyTestVueApp.Server.Configuration;
 using MyTestVueApp.Server.Entities;
 using MyTestVueApp.Server.Interfaces;
@@ -35,6 +34,10 @@ namespace MyTestVueApp.Server.Controllers
         /// <param name="artId">Id of the art the user is disliking</param>
         [HttpPost]
         [Route("InsertDislike")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> InsertDislike([FromQuery] int artId)
         {
             try
@@ -86,6 +89,10 @@ namespace MyTestVueApp.Server.Controllers
         /// <param name="artId">Id of the art the user is undisliking</param>
         [HttpDelete]
         [Route("RemoveDislike")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> RemoveDislike([FromQuery] int artId)
         {
             try
@@ -138,7 +145,10 @@ namespace MyTestVueApp.Server.Controllers
         /// <returns>True if it is disliked, false otherwise</returns>
         [HttpGet]
         [Route("IsDisliked")]
-        [ProducesResponseType(typeof(bool), 200)]
+        [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> IsDisliked([FromQuery] int artId)
         {
             try

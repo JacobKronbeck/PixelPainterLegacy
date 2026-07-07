@@ -1,10 +1,11 @@
+import { apiFetch } from './apiClient';
 import Notification from "../entities/Notification";
 
 export default class NotificationService {
   public static async getNotifications(artistId: number): Promise<Notification[]> {
   const allNotifications: Notification[] = [];
   try {
-    const response = await fetch(
+    const response = await apiFetch(
       `/notification/GetNotificationsForArtist?artistId=${artistId}`
     );
 
@@ -26,7 +27,7 @@ export default class NotificationService {
 }
   public static async markCommentViewed(commentId: number): Promise<boolean> {
     try {
-      const response = await fetch(`/notification/MarkCommentViewed`, {
+      const response = await apiFetch(`/notification/MarkCommentViewed`, {
         method: "POST", 
         body: JSON.stringify(commentId), 
         headers: { "Content-Type": "application/json" }});
@@ -42,7 +43,7 @@ export default class NotificationService {
   }
   public static async markLikeViewed(artId: number, artistId: number): Promise<boolean> {
     try {
-      const response = await fetch(`/notification/MarkLikeViewed`, {
+      const response = await apiFetch(`/notification/MarkLikeViewed`, {
         method: "POST", 
         body: JSON.stringify({"artId": artId, "artistId": artistId}), 
         headers: { "Content-Type": "application/json" }
@@ -59,7 +60,7 @@ export default class NotificationService {
   }
     public static async updateNotificationsEnabled(artistId: number, notificationsEnabled: number): Promise<boolean> {
       try {
-        const response = await fetch(`/notification/UpdateNotificationsEnabled`, {
+        const response = await apiFetch(`/notification/UpdateNotificationsEnabled`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ artistId, notificationsEnabled }),

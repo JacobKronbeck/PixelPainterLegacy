@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc.Diagnostics;
-using Microsoft.Identity.Client;
+using Microsoft.AspNetCore.Mvc.Diagnostics;
 using MyTestVueApp.Server.Database;
 using MyTestVueApp.Server.Entities;
 using MyTestVueApp.Server.Enums;

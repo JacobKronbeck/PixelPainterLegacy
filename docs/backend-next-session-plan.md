@@ -1,5 +1,35 @@
 # Backend Next Session Plan
 
+## This Session Outcome
+
+- Restored build verification by using the installed SDK directly:
+  - `C:\Program Files\dotnet\dotnet.exe`
+- `dotnet restore` succeeds when NuGet network access is allowed.
+- `dotnet build MyTestVueApp.Server/MyTestVueApp.Server.csproj --no-restore` succeeds.
+- `npm.cmd run build --prefix mytestvueapp.client` succeeds.
+- Migrated the reaction service cluster to `IPostgresDataAccess`:
+  - `LikeService`
+  - `DislikeService`
+  - `CommentLikeService`
+  - `CommentDislikeService`
+- Polished Swagger/OpenAPI metadata in `Program.cs`.
+- Added response annotations to reaction controllers.
+- Removed stale backend imports that blocked compilation after restore was available.
+- Decoupled `MyTestVueApp.Server.csproj` from the Visual Studio JavaScript `.esproj` reference so the API can build without `Microsoft.VisualStudio.JavaScript.Sdk`.
+- Added frontend API host support:
+  - `mytestvueapp.client/src/services/apiClient.ts`
+  - service-layer calls now use `VITE_API_BASE_URL`
+  - login redirects and SignalR hub URLs now use the same API base helper
+
+## Remaining External Work
+
+- Choose and provision the production ASP.NET API host.
+- Set `VITE_API_BASE_URL` in Vercel to that API host URL.
+- Run the Supabase migration against the real project.
+- Confirm PostGIS support and seed data in Supabase.
+- Smoke-test login, art save/load, comments, likes, tags, and map points against the deployed stack.
+- Review or upgrade `Magick.NET-Q16-AnyCPU`; restore/build reports known vulnerability advisories for version `14.5.0`.
+
 ## Current State
 
 - Branch: `Backend-Restructure`
@@ -101,4 +131,3 @@
   - `Polish Swagger API metadata`
   - `Add Vercel API base URL support`
 - Avoid mixing service refactors, deployment config, and frontend changes in the same commit unless they are inseparable.
-

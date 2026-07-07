@@ -1,9 +1,6 @@
-﻿using Azure.Core;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
-using Microsoft.Identity.Client;
 using Microsoft.Extensions.Configuration.UserSecrets;
-using Microsoft.IdentityModel.Tokens;
 using MyTestVueApp.Server.Configuration;
 using MyTestVueApp.Server.Entities;
 using MyTestVueApp.Server.Interfaces;
