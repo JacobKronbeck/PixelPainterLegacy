@@ -423,16 +423,15 @@ onMounted(async () => {
   if (!["#settings", "notifications_settings", "#friends", "#created_art", "#liked_art"].includes(route.hash)) {
     changeHash("#settings");
   }
-    try{
+  try {
     const user = await LoginService.getCurrentUser();
     if (user && user.id !== 0) {
       curUser.value = user;
       isAdmin.value = !!(user as any).isAdmin;
-        updateNotifications();
-        await loadFriends();
+      updateNotifications(user);
+      await loadFriends();
     }
-  }
-  catch{
+  } catch {
     // user is anonymous
   }
   await loadArtistData(String(route.params.artist ?? ""));
@@ -510,9 +509,8 @@ function cancelEdit(): void {
   newUsername.value = curArtist.value.name ?? "";
 }
 
-function updateNotifications(): void {
-  console.log(curArtist.value);
-  const value = curArtist.value.notificationsEnabled ?? 0;
+function updateNotifications(user = curUser.value): void {
+  const value = user.notificationsEnabled ?? 0;
   notifLikes.value = (value & 1) !== 0;
   notifComments.value = (value & 2) !== 0;
   notifReplies.value = (value & 4) !== 0;

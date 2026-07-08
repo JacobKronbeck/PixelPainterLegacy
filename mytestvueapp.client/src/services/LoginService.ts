@@ -2,9 +2,19 @@ import { apiFetch } from './apiClient';
 import type Artist from "@/entities/Artist";
 
 export default class LoginService {
+  private static async fetchWithRetry(path: string, init?: RequestInit): Promise<Response> {
+    const response = await apiFetch(path, init);
+    if (response.status < 500) {
+      return response;
+    }
+
+    await new Promise((resolve) => window.setTimeout(resolve, 500));
+    return apiFetch(path, init);
+  }
+
   public static async isLoggedIn(): Promise<boolean> {
     try {
-      const response = await apiFetch("/login/IsLoggedIn");
+      const response = await LoginService.fetchWithRetry("/login/IsLoggedIn");
       if (!response.ok) {
         throw new Error("Network response was not ok");
       }
@@ -59,7 +69,7 @@ export default class LoginService {
 
   public static async getCurrentUser(): Promise<Artist> {
     try {
-      const response = await apiFetch("/login/GetCurrentUser");
+      const response = await LoginService.fetchWithRetry("/login/GetCurrentUser");
 
       if (!response.ok) {
         throw new Error("Error retrieving user");
@@ -77,7 +87,7 @@ export default class LoginService {
 
   public static async getIsAdmin(): Promise<boolean> {
     try {
-      const response = await apiFetch("/login/GetIsAdmin");
+      const response = await LoginService.fetchWithRetry("/login/GetIsAdmin");
 
       if (!response.ok) {
         throw new Error("Error: Bad response");

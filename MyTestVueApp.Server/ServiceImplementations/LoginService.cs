@@ -426,8 +426,8 @@ namespace MyTestVueApp.Server.ServiceImplementations
                                 IsAdmin = reader.GetBoolean(3),
                                 CreationDate = reader.GetDateTime(4),
                                 PrivateProfile = reader.GetBoolean(5),
-                                Email = reader.GetString(6),
-                                NotificationsEnabled = reader.GetInt32(7)
+                                Email = reader.IsDBNull(6) ? string.Empty : reader.GetString(6),
+                                NotificationsEnabled = reader.IsDBNull(7) ? 63 : reader.GetInt32(7)
                             };
                             return artist;
                         }

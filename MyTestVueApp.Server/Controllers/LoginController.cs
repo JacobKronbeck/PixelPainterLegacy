@@ -59,7 +59,8 @@ namespace MyTestVueApp.Server.Controllers
             {
                 HttpOnly = true,
                 Secure = true,
-                SameSite = SameSiteMode.None
+                SameSite = SameSiteMode.None,
+                Expires = DateTimeOffset.UtcNow.AddDays(14)
             });
 
             await LoginService.SignupActions(userInfo.Id, userInfo.Email);
@@ -71,7 +72,11 @@ namespace MyTestVueApp.Server.Controllers
         [Route("Logout")]
         public IActionResult Logout()
         {
-            Response.Cookies.Delete("GoogleOAuth");
+            Response.Cookies.Delete("GoogleOAuth", new CookieOptions
+            {
+                Secure = true,
+                SameSite = SameSiteMode.None
+            });
             return Ok();
         }
 
@@ -95,7 +100,8 @@ namespace MyTestVueApp.Server.Controllers
             }
             catch (Exception ex)
             {
-                return Problem(ex.Message);
+                Logger.LogWarning(ex, "Login status check failed");
+                return Ok(false);
             }
         }
         /// <summary>
@@ -114,7 +120,8 @@ namespace MyTestVueApp.Server.Controllers
             }
             catch (Exception ex)
             {
-                return Problem(ex.Message);
+                Logger.LogWarning(ex, "Current user lookup failed");
+                return StatusCode(StatusCodes.Status503ServiceUnavailable, "Unable to retrieve current user.");
             }
         }
         /// <summary>
@@ -233,16 +240,18 @@ namespace MyTestVueApp.Server.Controllers
                 }
                 else
                 {
-                    throw new ArgumentException("User is not logged in");
+                    return Ok(false);
                 }
             } 
             catch(ArgumentException ex)
             {
-                return BadRequest(ex.Message);
+                Logger.LogWarning(ex, "Admin check failed");
+                return Ok(false);
             }
             catch (Exception ex)
             {
-                return Problem(ex.Message);
+                Logger.LogWarning(ex, "Admin check failed");
+                return Ok(false);
             }
         }
         /// <summary>

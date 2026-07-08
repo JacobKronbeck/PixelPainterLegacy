@@ -114,17 +114,17 @@ namespace MyTestVueApp.Server.ServiceImplementations
                 using (var connection = new SqlConnection(connectionString))
                 {
                     connection.Open();
-                    var query = @$"
+                    var query = @"
                         SELECT 
-                            Friends.Friend1Id,
-                            Friends.Friend2Id,
-                            Friends.Friend1Name,
-                            Friends.Friend2Name,
-                            Friends.FriendsOnDate   
-                        FROM Friends 
-                        JOIN Artist ON Artist.Id = Friends.Friend2Id
-                        WHERE Friends.Friend1Id = @id
-                        ORDER BY Friends.FriendsOnDate DESC;";
+                            friends.friend1id,
+                            friends.friend2id,
+                            coalesce(friends.friend1name, ''),
+                            coalesce(friends.friend2name, artist.name, ''),
+                            friends.friendsondate   
+                        FROM friends 
+                        JOIN artist ON artist.id = friends.friend2id
+                        WHERE friends.friend1id = @id
+                        ORDER BY friends.friendsondate DESC;";
 
                     using (var command = new SqlCommand(query, connection))
                     {
@@ -139,7 +139,7 @@ namespace MyTestVueApp.Server.ServiceImplementations
                                     Friend2Id = reader.GetInt32(1),
                                     Friend1Name = reader.GetString(2),
                                     Friend2Name = reader.GetString(3),
-                                    FriendsOnDate = DateOnly.FromDateTime(reader.GetDateTime(4)),
+                                    FriendsOnDate = reader.GetFieldValue<DateOnly>(4),
                                 };
                                 friends.Add(friend);
                             }

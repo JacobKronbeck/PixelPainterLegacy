@@ -160,16 +160,18 @@ namespace MyTestVueApp.Server.Controllers
                 }
                 else
                 {
-                    throw new AuthenticationException("User is not logged in!");
+                    return Ok(Array.Empty<Friends>());
                 }
             }
             catch (NullReferenceException ex)
             {
-                return Problem(ex.Message);
+                Logger.LogWarning(ex, "Friend lookup failed");
+                return Ok(Array.Empty<Friends>());
             }
             catch (AuthenticationException ex)
             {
-                return Unauthorized(ex.Message);
+                Logger.LogWarning(ex, "Friend lookup failed");
+                return Ok(Array.Empty<Friends>());
             }
             catch (ArgumentOutOfRangeException ex)
             {
@@ -177,7 +179,8 @@ namespace MyTestVueApp.Server.Controllers
             }
             catch (Exception ex)
             {
-                return Problem(ex.Message);
+                Logger.LogWarning(ex, "Friend lookup failed");
+                return Ok(Array.Empty<Friends>());
             }
         }
 
