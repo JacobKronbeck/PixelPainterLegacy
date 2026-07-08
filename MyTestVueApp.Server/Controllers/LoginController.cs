@@ -11,6 +11,7 @@ using MyTestVueApp.Server.ServiceImplementations;
 using MyTestVueApp.Server.Entities;
 using System.Security.Authentication;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.AspNetCore.WebUtilities;
 
 namespace MyTestVueApp.Server.Controllers
 {
@@ -33,8 +34,16 @@ namespace MyTestVueApp.Server.Controllers
         [Route("Login")]
         public IActionResult Login()
         {
-            var returnUrl = AppConfig.Value.RedirectUrl + "login/LoginRedirect";
-            var url = $"https://accounts.google.com/o/oauth2/v2/auth?client_id={AppConfig.Value.ClientId}&redirect_uri={returnUrl}&scope=email profile&response_type=code&prompt=consent";
+            var returnUrl = GetOAuthRedirectUri();
+            var url = QueryHelpers.AddQueryString("https://accounts.google.com/o/oauth2/v2/auth",
+                new Dictionary<string, string?>
+                {
+                    ["client_id"] = AppConfig.Value.ClientId,
+                    ["redirect_uri"] = returnUrl,
+                    ["scope"] = "email profile",
+                    ["response_type"] = "code",
+                    ["prompt"] = "consent"
+                });
 
             return Redirect(url);
         }
@@ -43,7 +52,7 @@ namespace MyTestVueApp.Server.Controllers
         [Route("LoginRedirect")]
         public async Task<IActionResult> RedirectLogin(string code, string scope, string authuser, string prompt)
         {
-            var userInfo = await LoginService.GetUserId(code);
+            var userInfo = await LoginService.GetUserId(code, GetOAuthRedirectUri());
 
             // Add Id to cookies
             Response.Cookies.Append("GoogleOAuth", userInfo.Id, new CookieOptions
@@ -55,7 +64,7 @@ namespace MyTestVueApp.Server.Controllers
 
             await LoginService.SignupActions(userInfo.Id, userInfo.Email);
 
-            return Redirect(AppConfig.Value.RedirectUrl);
+            return Redirect(GetPostLoginRedirectUri());
         }
 
         [HttpGet]
@@ -350,6 +359,28 @@ namespace MyTestVueApp.Server.Controllers
             {
                 return Problem(ex.Message);
             }
+        }
+
+        private string GetOAuthRedirectUri()
+        {
+            if (!string.IsNullOrWhiteSpace(AppConfig.Value.OAuthRedirectUrl))
+            {
+                return AppConfig.Value.OAuthRedirectUrl;
+            }
+
+            var scheme = (Request.Headers["X-Forwarded-Proto"].FirstOrDefault() ?? Request.Scheme).Split(',')[0].Trim();
+            var host = (Request.Headers["X-Forwarded-Host"].FirstOrDefault() ?? Request.Host.Value).Split(',')[0].Trim();
+            return $"{scheme}://{host}/login/LoginRedirect";
+        }
+
+        private string GetPostLoginRedirectUri()
+        {
+            if (!string.IsNullOrWhiteSpace(AppConfig.Value.PostLoginRedirectUrl))
+            {
+                return AppConfig.Value.PostLoginRedirectUrl;
+            }
+
+            return AppConfig.Value.RedirectUrl;
         }
     }
 }

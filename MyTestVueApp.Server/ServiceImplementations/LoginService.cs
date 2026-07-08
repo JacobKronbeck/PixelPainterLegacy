@@ -54,9 +54,9 @@ namespace MyTestVueApp.Server.ServiceImplementations
 
         #region Google Login
 
-        public async Task<Userinfo> GetUserId(string code)
+        public async Task<Userinfo> GetUserId(string code, string redirectUri)
         {
-            var accessToken = await GetAccessToken(code);
+            var accessToken = await GetAccessToken(code, redirectUri);
 
             try
             {
@@ -78,7 +78,7 @@ namespace MyTestVueApp.Server.ServiceImplementations
             }
         }
 
-        private async Task<string> GetAccessToken(string code)
+        private async Task<string> GetAccessToken(string code, string redirectUri)
         {
             try
             {
@@ -88,7 +88,7 @@ namespace MyTestVueApp.Server.ServiceImplementations
                     ClientSecret = AppConfig.Value.ClientSecret,
                     Code = code,
                     GrantType = "authorization_code",
-                    RedirectUri = AppConfig.Value.RedirectUrl + "login/LoginRedirect"
+                    RedirectUri = redirectUri
                 };
 
                 var result = await tokenResponse.ExecuteAsync(new HttpClient(), GoogleAuthConsts.TokenUrl, CancellationToken.None, SystemClock.Default);

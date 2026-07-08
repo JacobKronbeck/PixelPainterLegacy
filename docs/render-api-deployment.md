@@ -34,9 +34,29 @@ ApplicationConfiguration__ConnectionString
 ApplicationConfiguration__ClientId
 ApplicationConfiguration__ClientSecret
 ApplicationConfiguration__RedirectUrl
+ApplicationConfiguration__PostLoginRedirectUrl
 ```
 
 Use the Supabase pooled Postgres connection string for `ApplicationConfiguration__ConnectionString`.
+
+Use your frontend origin for `ApplicationConfiguration__RedirectUrl` and
+`ApplicationConfiguration__PostLoginRedirectUrl`, including a trailing slash:
+
+```text
+https://your-vercel-frontend-host/
+```
+
+The API derives Google's OAuth callback URL from the public API request host by default. In Google Cloud Console, the Authorized redirect URI must be:
+
+```text
+https://your-render-api-host/login/LoginRedirect
+```
+
+If you ever need to force that callback instead of deriving it, set:
+
+```text
+ApplicationConfiguration__OAuthRedirectUrl=https://your-render-api-host/login/LoginRedirect
+```
 
 ## Vercel Follow-Up
 
