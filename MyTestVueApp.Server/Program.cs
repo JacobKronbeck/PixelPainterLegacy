@@ -50,8 +50,14 @@ builder.Services.AddTransient<IFriendsService, FriendsService>();
 
 var app = builder.Build();
 
-app.UseDefaultFiles();
-app.UseStaticFiles();
+var webRootPath = Path.Combine(app.Environment.ContentRootPath, "wwwroot");
+var hasWebRoot = Directory.Exists(webRootPath);
+
+if (hasWebRoot)
+{
+    app.UseDefaultFiles();
+    app.UseStaticFiles();
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -64,9 +70,14 @@ if (app.Environment.IsDevelopment())
 
 app.UseAuthorization();
 
+app.MapGet("/healthz", () => Results.Ok(new { status = "ok" }));
+
 app.MapControllers();
 
-app.MapFallbackToFile("/index.html");
+if (hasWebRoot)
+{
+    app.MapFallbackToFile("/index.html");
+}
 
 app.MapHub<SignalHub>("/signalHub");
 

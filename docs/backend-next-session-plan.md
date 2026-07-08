@@ -23,12 +23,11 @@
 
 ## Remaining External Work
 
-- Choose and provision the production ASP.NET API host.
+- Provision the production ASP.NET API host on Render.
 - Set `VITE_API_BASE_URL` in Vercel to that API host URL.
 - Run the Supabase migration against the real project.
 - Confirm PostGIS support and seed data in Supabase.
 - Smoke-test login, art save/load, comments, likes, tags, and map points against the deployed stack.
-- Review or upgrade `Magick.NET-Q16-AnyCPU`; restore/build reports known vulnerability advisories for version `14.5.0`.
 
 ## Current State
 
@@ -38,8 +37,9 @@
   - `afcb416 Add Postgres data access helper`
   - `d63aa16 Finish Postgres backend cleanup`
   - `7cd84c3 Add Supabase project scaffold`
-- Working tree was clean after the last commit.
-- `dotnet` was not available on PATH in the Codex shell, so no build verification has been run yet.
+- `dotnet` is available through `C:\Program Files\dotnet\dotnet.exe`.
+- `Magick.NET-Q16-AnyCPU` was upgraded from `14.5.0` to `14.14.0`; `dotnet list package --vulnerable --include-transitive` reports no vulnerable packages.
+- The Vercel project URL opens, but the in-app browser is not logged in to Vercel yet.
 
 ## What Is Done
 
@@ -62,6 +62,10 @@
   - `VITE_SUPABASE_URL`
   - `VITE_SUPABASE_ANON_KEY`
   - `VITE_API_BASE_URL`
+- Picked Render as the production API host target and added:
+  - `MyTestVueApp.Server/Dockerfile`
+  - `.dockerignore`
+  - `docs/render-api-deployment.md`
 
 ## Immediate Next Steps
 
@@ -88,12 +92,11 @@
    - Decide whether Swagger UI should remain development-only or be enabled on the deployed API host.
    - Commit message suggestion: `Polish Swagger API metadata`
 
-4. Decide production API hosting.
+4. Provision production API hosting.
    - Vercel can host the Vue frontend, not the ASP.NET API.
-   - Choose a .NET host such as Azure App Service, Render, Fly.io, or Railway.
-   - Then either:
-     - configure Vercel rewrites to the API host, or
-     - refactor client services to use `VITE_API_BASE_URL`.
+   - Create a Render Docker Web Service using `MyTestVueApp.Server/Dockerfile`.
+   - Configure the API host with the Supabase connection string and Google OAuth settings.
+   - Set `VITE_API_BASE_URL` in Vercel to the Render API URL.
 
 5. Run the Supabase migration against a real project.
    - Confirm PostGIS extension support.
