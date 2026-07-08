@@ -59,7 +59,7 @@ namespace MyTestVueApp.Server.Controllers
             {
                 HttpOnly = true,
                 Secure = true,
-                SameSite = SameSiteMode.Strict
+                SameSite = SameSiteMode.None
             });
 
             await LoginService.SignupActions(userInfo.Id, userInfo.Email);
