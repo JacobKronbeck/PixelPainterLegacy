@@ -32,6 +32,31 @@ builder.Services.AddSignalR(sig => {
 
 builder.Services.Configure<ApplicationConfiguration>(builder.Configuration.GetSection("ApplicationConfiguration"));
 
+var frontendOrigins = new[]
+{
+    builder.Configuration["ApplicationConfiguration:RedirectUrl"],
+    builder.Configuration["ApplicationConfiguration:PostLoginRedirectUrl"],
+    "https://pixel-painter-legacy.vercel.app",
+    "https://pixelpainter.app",
+    "http://localhost:5173"
+}
+    .Where(origin => !string.IsNullOrWhiteSpace(origin))
+    .Select(origin => origin!.Trim().TrimEnd('/'))
+    .Distinct(StringComparer.OrdinalIgnoreCase)
+    .ToArray();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("FrontendCors", policy =>
+    {
+        policy
+            .WithOrigins(frontendOrigins)
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+    });
+});
+
 //Custom Services
 builder.Services.AddTransient<IPostgresDataAccess, PostgresDataAccess>();
 builder.Services.AddTransient<IArtAccessService, ArtAccessService>();
@@ -67,6 +92,8 @@ if (app.Environment.IsDevelopment())
 }
 
 // app.UseHttpsRedirection();
+
+app.UseCors("FrontendCors");
 
 app.UseAuthorization();
 
