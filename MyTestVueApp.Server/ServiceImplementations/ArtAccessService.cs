@@ -14,6 +14,22 @@ namespace MyTestVueApp.Server.ServiceImplementations
         private readonly ILogger<ArtAccessService> Logger;
         private readonly ITagService TagService;
         private readonly ILoginService LoginService;
+
+        private static int GetInt32OrDefault(SqlDataReader reader, int ordinal, int defaultValue = 0)
+        {
+            return reader.IsDBNull(ordinal) ? defaultValue : reader.GetInt32(ordinal);
+        }
+
+        private static string GetStringOrDefault(SqlDataReader reader, int ordinal, string defaultValue = "")
+        {
+            return reader.IsDBNull(ordinal) ? defaultValue : reader.GetString(ordinal);
+        }
+
+        private static DateTime GetDateTimeOrDefault(SqlDataReader reader, int ordinal)
+        {
+            return reader.IsDBNull(ordinal) ? DateTime.UtcNow : reader.GetDateTime(ordinal);
+        }
+
         public ArtAccessService(
             IOptions<ApplicationConfiguration> appConfig,
             ILogger<ArtAccessService> logger,
@@ -200,24 +216,25 @@ namespace MyTestVueApp.Server.ServiceImplementations
                     @"
                     Select 
 	                    Art.Id, 
-	                    Art.Title,   
-	                    Art.Width, 
-	                    Art.Height, 
-	                    Art.Encode, 
+	                    COALESCE(Art.Title, '') AS Title,
+	                    COALESCE(Art.Width, 0) AS Width,
+	                    COALESCE(Art.Height, 0) AS Height,
+	                    COALESCE(Art.Encode, '') AS Encode,
 	                    Art.CreationDate, 
 	                    Art.isPublic, 
 						Art.IsGIF,
 	                    COUNT(distinct Likes.ArtistId)::int as Likes,
                         COUNT(distinct Dislikes.ArtistId)::int as Dislikes,
 	                    Count(distinct Comment.Id)::int as Comments,
-                        Art.gifId,
-                        Art.gifFrameNum
+                        COALESCE(Art.gifId, 0) AS gifId,
+                        COALESCE(Art.gifFrameNum, 0) AS gifFrameNum
                     FROM ART  
 	                    LEFT JOIN Likes ON Art.ID = Likes.ArtID  
                         LEFT JOIN Dislikes ON Art.ID = Dislikes.ArtID
 	                    LEFT JOIN Comment ON Art.ID = Comment.ArtID
                         left join  ContributingArtists as CA on CA.ArtId = Art.Id
                     WHERE CA.ArtistId = @ArtistID
+                        AND COALESCE(Art.gifFrameNum, 0) <= 1
                     GROUP BY Art.ID, Art.Title, Art.Width, Art.Height, Art.Encode, Art.CreationDate, Art.isPublic, Art.IsGIF, Art.GifId, Art.gifFrameNum
                     ";
                 using (var command = new SqlCommand(query, connection))
@@ -229,22 +246,22 @@ namespace MyTestVueApp.Server.ServiceImplementations
                         {
                             var pixelGrid = new PixelGrid()
                             {
-                                Width = reader.GetInt32(2),
-                                Height = reader.GetInt32(3),
-                                EncodedGrid = reader.GetString(4)
+                                Width = GetInt32OrDefault(reader, 2),
+                                Height = GetInt32OrDefault(reader, 3),
+                                EncodedGrid = GetStringOrDefault(reader, 4)
                             };
                             var painting = new Art
                             { //Art Table + NumLikes and NumComments
-                                Id = reader.GetInt32(0),
-                                Title = reader.GetString(1),
-                                CreationDate = reader.GetDateTime(5),
+                                Id = GetInt32OrDefault(reader, 0),
+                                Title = GetStringOrDefault(reader, 1),
+                                CreationDate = GetDateTimeOrDefault(reader, 5),
                                 IsPublic = reader.GetBoolean(6),
                                 IsGif = reader.GetBoolean(7),
-                                NumLikes = reader.GetInt32(8),
-                                NumDislikes = reader.GetInt32(9),
-                                NumComments = reader.GetInt32(10),
-                                GifID = reader.GetInt32(11),
-                                GifFrameNum = reader.GetInt32(12),
+                                NumLikes = GetInt32OrDefault(reader, 8),
+                                NumDislikes = GetInt32OrDefault(reader, 9),
+                                NumComments = GetInt32OrDefault(reader, 10),
+                                GifID = GetInt32OrDefault(reader, 11),
+                                GifFrameNum = GetInt32OrDefault(reader, 12),
                                 PixelGrid = pixelGrid,
                             };
 
@@ -275,15 +292,15 @@ namespace MyTestVueApp.Server.ServiceImplementations
                 var query = @"
             SELECT
                 A.Id,
-                A.Title,
-                A.Width,
-                A.Height,
-                A.Encode,
+                COALESCE(A.Title, '') AS Title,
+                COALESCE(A.Width, 0) AS Width,
+                COALESCE(A.Height, 0) AS Height,
+                COALESCE(A.Encode, '') AS Encode,
                 A.CreationDate,
                 A.isPublic,
                 A.IsGIF,
-                A.GifId,
-                A.gifFrameNum,
+                COALESCE(A.GifId, 0) AS GifId,
+                COALESCE(A.gifFrameNum, 0) AS gifFrameNum,
                 COUNT(DISTINCT AL.ArtistId)::int AS Likes,
                 COUNT(DISTINCT DL.ArtistId)::int AS Dislikes,
                 COUNT(DISTINCT C.Id)::int        AS Comments
@@ -293,6 +310,7 @@ namespace MyTestVueApp.Server.ServiceImplementations
             LEFT JOIN Dislikes DL   ON DL.ArtId = A.Id
             LEFT JOIN Comment  C    ON C.ArtId  = A.Id
             WHERE L.ArtistId = @ArtistId
+                AND COALESCE(A.gifFrameNum, 0) <= 1
             GROUP BY A.Id, A.Title, A.Width, A.Height, A.Encode, A.CreationDate, A.isPublic, A.IsGIF, A.GifId, A.gifFrameNum;
         ";
 
@@ -306,24 +324,24 @@ namespace MyTestVueApp.Server.ServiceImplementations
                         {
                             var pixelGrid = new PixelGrid
                             {
-                                Width = reader.GetInt32(2),
-                                Height = reader.GetInt32(3),
-                                EncodedGrid = reader.GetString(4)
+                                Width = GetInt32OrDefault(reader, 2),
+                                Height = GetInt32OrDefault(reader, 3),
+                                EncodedGrid = GetStringOrDefault(reader, 4)
                             };
 
                             var painting = new Art
                             {
-                                Id = reader.GetInt32(0),
-                                Title = reader.GetString(1),
+                                Id = GetInt32OrDefault(reader, 0),
+                                Title = GetStringOrDefault(reader, 1),
                                 PixelGrid = pixelGrid,
-                                CreationDate = reader.GetDateTime(5),
+                                CreationDate = GetDateTimeOrDefault(reader, 5),
                                 IsPublic = reader.GetBoolean(6),
                                 IsGif = reader.GetBoolean(7),
-                                GifID = reader.GetInt32(8),
-                                GifFrameNum = reader.GetInt32(9),
-                                NumLikes = reader.GetInt32(10),
-                                NumDislikes = reader.GetInt32(11),
-                                NumComments = reader.GetInt32(12)
+                                GifID = GetInt32OrDefault(reader, 8),
+                                GifFrameNum = GetInt32OrDefault(reader, 9),
+                                NumLikes = GetInt32OrDefault(reader, 10),
+                                NumDislikes = GetInt32OrDefault(reader, 11),
+                                NumComments = GetInt32OrDefault(reader, 12)
                             };
 
                             // Populate artists and tags so JSON is not null
@@ -821,7 +839,7 @@ namespace MyTestVueApp.Server.ServiceImplementations
                 //var query = "SELECT Date, TemperatureC, Summary FROM WeatherForecasts";
                 var query1 =
                     @"
-                    Select ContributingArtists.ArtistId, Artist.Name from ContributingArtists
+                    Select ContributingArtists.ArtistId, COALESCE(Artist.Name, '') from ContributingArtists
                     left join Artist on ContributingArtists.ArtistId = Artist.Id where ContributingArtists.ArtId = @ArtId; ";
                 using (var command = new SqlCommand(query1, connection))
                 {
@@ -832,8 +850,8 @@ namespace MyTestVueApp.Server.ServiceImplementations
                         {
                             contributingArtists = new Artist()
                             {
-                                Id = reader.GetInt32(0),
-                                Name = reader.GetString(1)
+                                Id = GetInt32OrDefault(reader, 0),
+                                Name = GetStringOrDefault(reader, 1)
                             };
                             artists.Add(contributingArtists);
                         }
