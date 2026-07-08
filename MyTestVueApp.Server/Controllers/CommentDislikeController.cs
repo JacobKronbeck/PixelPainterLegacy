@@ -1,6 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
 using MyTestVueApp.Server.Configuration;
 using MyTestVueApp.Server.Entities;
 using MyTestVueApp.Server.Interfaces;
@@ -34,6 +33,10 @@ namespace MyTestVueApp.Server.Controllers
         /// </summary>
         [HttpPost]
         [Route("InsertCommentDislike")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> InsertCommentDislike([FromQuery] int commentId)
         {
             try
@@ -84,6 +87,10 @@ namespace MyTestVueApp.Server.Controllers
         /// </summary>
         [HttpDelete]
         [Route("RemoveCommentDislike")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> RemoveCommentDislike([FromQuery] int commentId)
         {
             try
@@ -135,7 +142,10 @@ namespace MyTestVueApp.Server.Controllers
         /// <returns>True if it is disliked, false otherwise</returns>
         [HttpGet]
         [Route("IsCommentDisliked")]
-        [ProducesResponseType(typeof(bool), 200)]
+        [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> IsCommentDisliked([FromQuery]int commentId)
         {
             try

@@ -1,7 +1,8 @@
+import { apiFetch } from './apiClient';
 export default class DislikeService {
     public static async insertDislike(artId: number): Promise<boolean> {
         try {
-            const response = await fetch(`/dislike/InsertDislike?artId=${artId}`, {
+            const response = await apiFetch(`/dislike/InsertDislike?artId=${artId}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" }
             });
@@ -16,7 +17,7 @@ export default class DislikeService {
     }
     public static async removeDislike(artId: number): Promise<boolean> {
         try {
-            const response = await fetch(`/dislike/RemoveDislike?artId=${artId}`, {
+            const response = await apiFetch(`/dislike/RemoveDislike?artId=${artId}`, {
                 method: "DELETE",
                 headers: { "Content-Type": "application/json" }
             });
@@ -31,7 +32,7 @@ export default class DislikeService {
     }
     public static async isDisliked(artId: number): Promise<boolean> {
         try {
-            const response = await fetch(`/dislike/IsDisliked?artId=${artId}`);
+            const response = await apiFetch(`/dislike/IsDisliked?artId=${artId}`);
             if (!response.ok) {
                 throw new Error("Response was false.");
             }

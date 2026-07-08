@@ -1,3 +1,4 @@
+import { apiFetch } from './apiClient';
 import Point from "../entities/Point";
 import Artspace from "../entities/Artspace";
 import Art from "../entities/Art";
@@ -7,7 +8,7 @@ export default class MapAccessService {
 
     public static async getAllPoints(): Promise<Point[]> {
         try {
-            const response = await fetch(
+            const response = await apiFetch(
             `/mapaccess/GetAllPoints`
             );
             if (!response.ok) {
@@ -33,7 +34,7 @@ export default class MapAccessService {
 
         public static async getPointById(pointId: number): Promise<Point> {
             try {
-                const response = await fetch(
+                const response = await apiFetch(
                     `mapaccess/GetPointById?id=${pointId}`
                 );
                 if (!response.ok) {
@@ -62,7 +63,7 @@ export default class MapAccessService {
 
     public static async getArtspacePoints(artspaceId: number): Promise<Point[]> {
         try {
-            const response = await fetch(
+            const response = await apiFetch(
                 `/mapaccess/GetArtspacePoints?id=${artspaceId}`
             );
             if (!response.ok) {
@@ -88,7 +89,7 @@ export default class MapAccessService {
 
     public static async getAllArtspaces(): Promise<Artspace[]> {
         try {
-            const response = await fetch(
+            const response = await apiFetch(
                 `/mapaccess/GetAllArtspaces`
             );
             if (!response.ok) {
@@ -114,7 +115,7 @@ export default class MapAccessService {
 
     public static async getArtspaceById(artspaceId: number): Promise<Artspace> {
         try {
-            const response = await fetch(
+            const response = await apiFetch(
                 `/mapaccess/GetArtspaceById?id=${artspaceId}`
             );
             if (!response.ok) {
@@ -136,7 +137,7 @@ export default class MapAccessService {
 
     public static async getArtByPoint(pointId: number): Promise<Art[]> {
         try {
-            const response = await fetch(
+            const response = await apiFetch(
                 `/mapaccess/GetArtByPoint?id=${pointId}`
             );
             if (!response.ok) {
@@ -162,7 +163,7 @@ export default class MapAccessService {
 
     public static async createPoint(latitude: number, longitude: number, title: string, artspace: number): Promise<number> {
         try {
-            const response = await fetch(`/mapaccess/CreatePoint?latitude=${latitude}&longitude=${longitude}&title=${title}&artspace=${artspace}`, {
+            const response = await apiFetch(`/mapaccess/CreatePoint?latitude=${latitude}&longitude=${longitude}&title=${title}&artspace=${artspace}`, {
                 method: "PUT"
             });
             if (!response.ok) {
@@ -179,7 +180,7 @@ export default class MapAccessService {
 
     public static async updateArtLocation(artId: number, pointId: number): Promise<boolean> {
         try {
-            const response = await fetch(`/mapaccess/UpdateArtLocation?artId=${artId}&pointId=${pointId}`, {
+            const response = await apiFetch(`/mapaccess/UpdateArtLocation?artId=${artId}&pointId=${pointId}`, {
                 method: "PUT"
             });
             if (!response.ok) {
@@ -194,7 +195,7 @@ export default class MapAccessService {
 
     public static async deleteLocation(pointId: number): Promise<boolean> {
       try {
-        const response = await fetch(`/mapaccess/DeleteLocation?pointId=${pointId}`, {
+        const response = await apiFetch(`/mapaccess/DeleteLocation?pointId=${pointId}`, {
           method: "PUT"
         });
         if (!response.ok) {

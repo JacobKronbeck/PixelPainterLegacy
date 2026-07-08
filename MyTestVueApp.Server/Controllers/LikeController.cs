@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
 using MyTestVueApp.Server.Configuration;
 using MyTestVueApp.Server.Entities;
 using MyTestVueApp.Server.Interfaces;
@@ -35,6 +34,10 @@ namespace MyTestVueApp.Server.Controllers
         /// <param name="artId">Id of the art the user is liking</param>
         [HttpPost]
         [Route("InsertLike")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> InsertLike([FromQuery] int artId)
         {
             try
@@ -86,6 +89,10 @@ namespace MyTestVueApp.Server.Controllers
         /// <param name="artId">Id of the art the user is unliking</param>
         [HttpDelete]
         [Route("RemoveLike")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> RemoveLike([FromQuery] int artId)
         {
             try
@@ -138,7 +145,10 @@ namespace MyTestVueApp.Server.Controllers
         /// <returns>True if it is liked, false otherwise</returns>
         [HttpGet]
         [Route("IsLiked")]
-        [ProducesResponseType(typeof(bool), 200)]
+        [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> IsLiked([FromQuery] int artId)
         {
             try

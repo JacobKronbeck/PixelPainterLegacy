@@ -1,7 +1,8 @@
+import { apiFetch } from './apiClient';
 export default class CommentDislikeService {
     public static async insertCommentDislike(commentId: number): Promise<boolean> {
         try {
-            const response = await fetch(`/commentdislike/InsertCommentDislike?commentId=${commentId}`, {
+            const response = await apiFetch(`/commentdislike/InsertCommentDislike?commentId=${commentId}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" }
             });
@@ -16,7 +17,7 @@ export default class CommentDislikeService {
     }
     public static async removeCommentDislike(commentId: number): Promise<boolean> {
         try {
-            const response = await fetch(`/commentdislike/RemoveCommentDislike?commentId=${commentId}`, {
+            const response = await apiFetch(`/commentdislike/RemoveCommentDislike?commentId=${commentId}`, {
                 method: "DELETE",
                 headers: { "Content-Type": "application/json" }
             });
@@ -31,7 +32,7 @@ export default class CommentDislikeService {
     }
     public static async isCommentDisliked(commentId: number): Promise<boolean> {
         try {
-            const response = await fetch(`/commentdislike/IsCommentDisliked?commentId=${commentId}`);
+            const response = await apiFetch(`/commentdislike/IsCommentDisliked?commentId=${commentId}`);
             if (!response.ok) {
                 throw new Error("Response was false.");
             }

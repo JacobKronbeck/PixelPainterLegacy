@@ -23,11 +23,12 @@ import Card from "primevue/card";
 import { onMounted, ref } from "vue";
 import router from "@/router";
 import LoginService from "@/services/LoginService";
+import { apiUrl } from "@/services/apiClient";
 
 const loggedIn = ref<boolean>(false);
 
 function goToGrid(): void {
-  window.location.replace("/login/Login");
+  window.location.replace(apiUrl("/login/Login"));
 }
 
 onMounted(async () => {

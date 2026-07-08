@@ -175,6 +175,7 @@ import Artist from "@/entities/Artist";
 //services
 import LoginService from "@/services/LoginService";
 import GIFCreationService from "@/services/GIFCreationService";
+import { apiUrl } from "@/services/apiClient";
 
 //vue
 import { ref, watch, computed, onMounted, onUnmounted, nextTick } from "vue";
@@ -225,7 +226,7 @@ const audioRef = ref(new Audio());
 const connected = ref<boolean>(false);
 const groupName = ref<string>("");
 let connection = new SignalR.HubConnectionBuilder()
-  .withUrl("http://localhost:7154/signalhub", {
+  .withUrl(apiUrl("/signalHub"), {
     skipNegotiation: true,
     transport: SignalR.HttpTransportType.WebSockets
   })

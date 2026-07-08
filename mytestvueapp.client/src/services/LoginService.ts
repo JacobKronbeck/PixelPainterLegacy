@@ -1,9 +1,10 @@
+import { apiFetch } from './apiClient';
 import type Artist from "@/entities/Artist";
 
 export default class LoginService {
   public static async isLoggedIn(): Promise<boolean> {
     try {
-      const response = await fetch("/login/IsLoggedIn");
+      const response = await apiFetch("/login/IsLoggedIn");
       if (!response.ok) {
         throw new Error("Network response was not ok");
       }
@@ -17,7 +18,7 @@ export default class LoginService {
 
   public static async logout(): Promise<void> {
     try {
-      const response = await fetch("/login/Logout");
+      const response = await apiFetch("/login/Logout");
       if (!response.ok) {
         throw new Error("Network response was not ok");
       }
@@ -28,7 +29,7 @@ export default class LoginService {
 
   public static async GetArtistByName(name: string): Promise<Artist> {
     try {
-      const response = await fetch(`/login/GetArtistByName?name=${name}`);
+      const response = await apiFetch(`/login/GetArtistByName?name=${name}`);
       const json = await response.json();
 
       return json as Artist;
@@ -40,7 +41,7 @@ export default class LoginService {
 
   public static async GetAllArtists(): Promise<Artist[]> {
     try {
-      const response = await fetch(`/login/GetAllArtists`);
+      const response = await apiFetch(`/login/GetAllArtists`);
       const json = await response.json();
 
       const allArtists: Artist[] = [];
@@ -58,7 +59,7 @@ export default class LoginService {
 
   public static async getCurrentUser(): Promise<Artist> {
     try {
-      const response = await fetch("/login/GetCurrentUser");
+      const response = await apiFetch("/login/GetCurrentUser");
 
       if (!response.ok) {
         throw new Error("Error retrieving user");
@@ -76,7 +77,7 @@ export default class LoginService {
 
   public static async getIsAdmin(): Promise<boolean> {
     try {
-      const response = await fetch("/login/GetIsAdmin");
+      const response = await apiFetch("/login/GetIsAdmin");
 
       if (!response.ok) {
         throw new Error("Error: Bad response");
@@ -94,7 +95,7 @@ export default class LoginService {
 
   public static async setAdmin(artistId: number, isAdmin: boolean): Promise<boolean> {
     try {
-      const response = await fetch(`/login/SetAdmin?artistId=${artistId}&isAdmin=${isAdmin}`, {
+      const response = await apiFetch(`/login/SetAdmin?artistId=${artistId}&isAdmin=${isAdmin}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" }
       });
@@ -112,7 +113,7 @@ export default class LoginService {
 
   public static async updateUsername(newUsername: any): Promise<boolean> {
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         `/login/UpdateUsername?newUsername=${newUsername}`,
         {
           method: "PUT",
@@ -135,7 +136,7 @@ export default class LoginService {
   }
   public static async privateSwitchChange(artistId: Number): Promise<void> {
     try {
-      const response = await fetch(`/login/privateSwitchChange`, {
+      const response = await apiFetch(`/login/privateSwitchChange`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(artistId)
@@ -151,7 +152,7 @@ export default class LoginService {
   }
   public static async deleteArtist(id: number): Promise<void> {
     try {
-      const response = await fetch(`/login/DeleteArtist?id=${id}`, {
+      const response = await apiFetch(`/login/DeleteArtist?id=${id}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" }
       });
@@ -166,7 +167,7 @@ export default class LoginService {
   }
   public static async updateNotificationsEnabled(artistId: number, notificationsEnabled: number): Promise<boolean> {
     try {
-      const response = await fetch("/artist/UpdateNotifications", {
+      const response = await apiFetch("/artist/UpdateNotifications", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ artistId, notificationsEnabled })

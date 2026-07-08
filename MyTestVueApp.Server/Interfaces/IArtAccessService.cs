@@ -1,5 +1,4 @@
-using Microsoft.Data.SqlClient;
-using MyTestVueApp.Server.Entities;
+﻿using MyTestVueApp.Server.Entities;
 
 namespace MyTestVueApp.Server.Interfaces
 {

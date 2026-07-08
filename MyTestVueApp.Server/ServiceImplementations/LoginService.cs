@@ -4,7 +4,6 @@ using Google.Apis.Oauth2.v2;
 using Google.Apis.Oauth2.v2.Data;
 using Google.Apis.Services;
 using Google.Apis.Util;
-using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Options;
 using MyTestVueApp.Server.Configuration;
 using MyTestVueApp.Server.Entities;
@@ -197,13 +196,13 @@ namespace MyTestVueApp.Server.ServiceImplementations
             {
                 connection.Open();
                 var query =
-                    @"SELECT [Id]
-                        ,[SubId] 
-                        ,[Name] 
-                        ,[IsAdmin]
-						,[PrivateProfile]
-                        ,[CreationDate] 
-                    FROM [PixelPainter].[dbo].[Artist]
+                    @"SELECT Id
+                        ,SubId
+                        ,Name
+                        ,IsAdmin
+						,PrivateProfile
+                        ,CreationDate
+                    FROM Artist
                     ";
                 
                 using (SqlCommand command = new SqlCommand(query, connection))
@@ -248,7 +247,7 @@ namespace MyTestVueApp.Server.ServiceImplementations
                 {
                     var query =
                         @"update Artist
-                          set PrivateProfile = 0
+                          set PrivateProfile = false
                           where Id = @Id";
                     using (SqlCommand command = new SqlCommand(query, connection))
                     {
@@ -262,7 +261,7 @@ namespace MyTestVueApp.Server.ServiceImplementations
                 {
                     var query =
                         @"update Artist
-                          set PrivateProfile = 1
+                          set PrivateProfile = true
                           where Id = @Id";
                     using (SqlCommand command = new SqlCommand(query, connection))
                     {
@@ -291,7 +290,7 @@ namespace MyTestVueApp.Server.ServiceImplementations
                     connection.Open();
 
                     // This query and command is to check if the username is already taken or not
-                    var checkDupQuery = "SELECT COUNT(*) FROM Artist WHERE Name = @Name";
+                    var checkDupQuery = "SELECT COUNT(*)::int FROM Artist WHERE Name = @Name";
                     using (SqlCommand checkDupCommand = new SqlCommand(checkDupQuery, connection))
                     {
                         checkDupCommand.Parameters.AddWithValue("@Name", newUsername);
@@ -342,14 +341,14 @@ namespace MyTestVueApp.Server.ServiceImplementations
                 connection.Open();
 
                 var query = $@" 
-                  SELECT [Id]
-                    ,[SubId]
-                    ,[Name]
-                    ,[IsAdmin]
-                    ,[CreationDate]
-                    ,[PrivateProfile]
-                    ,[NotificationsEnabled]
-                FROM [PixelPainter].[dbo].[Artist]
+                  SELECT Id
+                    ,SubId
+                    ,Name
+                    ,IsAdmin
+                    ,CreationDate
+                    ,PrivateProfile
+                    ,NotificationsEnabled
+                FROM Artist
                 where Artist.Name = @Name
                     ";
                 using (SqlCommand command = new SqlCommand(query, connection))
@@ -394,16 +393,17 @@ namespace MyTestVueApp.Server.ServiceImplementations
                 connection.Open();
 
                 var query = @"
-                    SELECT TOP (1) [Id]
-                          ,[SubId]
-                          ,[Name]
-                          ,[IsAdmin]
-                          ,[CreationDate]
-                          ,[PrivateProfile]
-                          ,[Email]
-                          ,[NotificationsEnabled]
-                      FROM [PixelPainter].[dbo].[Artist]
+                    SELECT Id
+                          ,SubId
+                          ,Name
+                          ,IsAdmin
+                          ,CreationDate
+                          ,PrivateProfile
+                          ,Email
+                          ,NotificationsEnabled
+                      FROM Artist
                       WHERE SubId = @SubId
+                      LIMIT 1
                     ";
                 using (SqlCommand command = new SqlCommand(query, connection))
                 {
@@ -487,7 +487,7 @@ namespace MyTestVueApp.Server.ServiceImplementations
                 {
                     connection.Open();
 
-                    var deleteArtQuery = "DELETE artist where artist.id =  @ArtistId ";
+                    var deleteArtQuery = "DELETE FROM Artist WHERE Id = @ArtistId";
                     using (SqlCommand deleteArtCommand = new SqlCommand(deleteArtQuery, connection))
                     {
                         deleteArtCommand.Parameters.AddWithValue("@ArtistId", ArtistId);
@@ -517,15 +517,16 @@ namespace MyTestVueApp.Server.ServiceImplementations
                 connection.Open();
 
                 var query = @"
-                    SELECT TOP (1) [Id]
-                          ,[SubId]
-                          ,[Name]
-                          ,[IsAdmin]
-                          ,[CreationDate]
-                          ,[Email]
-                          ,[PrivateProfile] 
-                      FROM [PixelPainter].[dbo].[Artist]
+                    SELECT Id
+                          ,SubId
+                          ,Name
+                          ,IsAdmin
+                          ,CreationDate
+                          ,Email
+                          ,PrivateProfile
+                      FROM Artist
                       WHERE Id = @Id
+                      LIMIT 1
                     ";
                 using (SqlCommand command = new SqlCommand(query, connection))
                 {
@@ -560,7 +561,7 @@ namespace MyTestVueApp.Server.ServiceImplementations
                 await connection.OpenAsync();
 
                 // Ensure artist exists
-                var existsCmd = new SqlCommand("SELECT COUNT(1) FROM Artist WHERE Id = @Id", connection);
+                var existsCmd = new SqlCommand("SELECT COUNT(1)::int FROM Artist WHERE Id = @Id", connection);
                 existsCmd.Parameters.AddWithValue("@Id", artistId);
                 var exists = (int)await existsCmd.ExecuteScalarAsync() > 0;
                 if (!exists) return false;

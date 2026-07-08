@@ -1,3 +1,4 @@
+import { apiFetch } from './apiClient';
 import Friends from "../entities/Friends";
 
 export default class FriendService {
@@ -5,7 +6,7 @@ export default class FriendService {
   // Get the logged-in user's friends
   public static async getArtistFriends(): Promise<Friends[]> {
     try {
-      const response = await fetch(`/friends/GetArtistFriends`);
+      const response = await apiFetch(`/friends/GetArtistFriends`);
 
       if (!response.ok) {
         throw new Error("Problem getting artist friends");
@@ -21,7 +22,7 @@ export default class FriendService {
   // Add a new friend (artistId2 is other user ID)
   public static async insertFriends(artistId: number): Promise<boolean> {
     try {
-      const response = await fetch(`/friends/InsertFriends?artistId=${artistId}`, {
+      const response = await apiFetch(`/friends/InsertFriends?artistId=${artistId}`, {
         method: "POST",
       });
 
@@ -36,7 +37,7 @@ export default class FriendService {
   // Remove a friend
   public static async removeFriends(artistId: number): Promise<boolean> {
     try {
-      const response = await fetch(`/friends/RemoveFriends?artistId=${artistId}`, {
+      const response = await apiFetch(`/friends/RemoveFriends?artistId=${artistId}`, {
         method: "DELETE",
       });
 

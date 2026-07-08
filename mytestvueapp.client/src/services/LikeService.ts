@@ -1,7 +1,8 @@
+import { apiFetch } from './apiClient';
 export default class LikeService {
   public static async insertLike(artId: number): Promise<boolean> {
     try {
-      const response = await fetch(`/like/InsertLike?artId=${artId}`, {
+      const response = await apiFetch(`/like/InsertLike?artId=${artId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" }
       });
@@ -16,7 +17,7 @@ export default class LikeService {
   }
   public static async removeLike(artId: number): Promise<boolean> {
     try {
-      const response = await fetch(`/like/RemoveLike?artId=${artId}`, {
+      const response = await apiFetch(`/like/RemoveLike?artId=${artId}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" }
       });
@@ -31,7 +32,7 @@ export default class LikeService {
   }
   public static async isLiked(artId: number): Promise<boolean> {
     try {
-      const response = await fetch(`/like/IsLiked?artId=${artId}`);
+      const response = await apiFetch(`/like/IsLiked?artId=${artId}`);
       if (!response.ok) {
         throw new Error("Response was false.");
       }

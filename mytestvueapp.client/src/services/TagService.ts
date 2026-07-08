@@ -1,3 +1,4 @@
+import { apiFetch } from './apiClient';
 export default class TagService {
   private static normalizeTag(tag: any) {
     if (tag == null) return tag;
@@ -11,14 +12,14 @@ export default class TagService {
   }
 
   public static async getAllTags(): Promise<any[]> {
-    const response = await fetch("/tag/GetAll");
+    const response = await apiFetch("/tag/GetAll");
     if (!response.ok) throw new Error("Failed to fetch tags");
     const data = await response.json();
     return Array.isArray(data) ? data.map(TagService.normalizeTag) : [];
   }
 
   public static async createTag(name: string): Promise<any> {
-    const response = await fetch("/tag/Create", {
+    const response = await apiFetch("/tag/Create", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name })
@@ -49,7 +50,7 @@ export default class TagService {
     const cleanIds = [...new Set(tagIds.filter(id => Number.isFinite(id) && id > 0))];
     if (!cleanIds.length) return;
 
-    let response = await fetch(`/tag/AssignToArt`, {
+    let response = await apiFetch(`/tag/AssignToArt`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ artId, tagIds: cleanIds })
@@ -57,7 +58,7 @@ export default class TagService {
 
     if (!response.ok && [400,404,415,500].includes(response.status)) {
       const qs = `artId=${artId}&` + cleanIds.map(id => `tagIds=${id}`).join("&");
-      response = await fetch(`/tag/AssignToArt?${qs}`, { method: "POST" });
+      response = await apiFetch(`/tag/AssignToArt?${qs}`, { method: "POST" });
     }
 
     if (!response.ok) {
@@ -68,19 +69,19 @@ export default class TagService {
   }
 
   public static async getTagsForArt(artId: number): Promise<any[]> {
-    const response = await fetch(`/tag/GetTagsForArt?artId=${artId}`);
+    const response = await apiFetch(`/tag/GetTagsForArt?artId=${artId}`);
     if (!response.ok) throw new Error("Failed to fetch tags for art");
     const data = await response.json();
     return Array.isArray(data) ? data.map(TagService.normalizeTag) : [];
   }
 
   public static async removeTagFromArt(artId: number, tagId: number): Promise<void> {
-    const response = await fetch(`/tag/RemoveFromArt?artId=${artId}&tagId=${tagId}`, { method: "DELETE" });
+    const response = await apiFetch(`/tag/RemoveFromArt?artId=${artId}&tagId=${tagId}`, { method: "DELETE" });
     if (!response.ok) throw new Error("Failed to remove tag from art");
   }
 
   public static async deleteTag(tagId: number): Promise<void> {
-    const response = await fetch(`/tag/DeleteTag?tagId=${tagId}`, { method: "DELETE" });
+    const response = await apiFetch(`/tag/DeleteTag?tagId=${tagId}`, { method: "DELETE" });
     if (!response.ok) {
       let t = "";
       try { t = await response.text(); } catch {}

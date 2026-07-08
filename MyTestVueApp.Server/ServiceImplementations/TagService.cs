@@ -1,6 +1,4 @@
-﻿using Microsoft.Data.SqlClient;
-using Microsoft.Extensions.Options;
-using MyTestVueApp.Server.Configuration;
+using MyTestVueApp.Server.Database;
 using MyTestVueApp.Server.Entities;
 using MyTestVueApp.Server.Interfaces;
 using Microsoft.Extensions.Logging;
@@ -9,185 +7,123 @@ namespace MyTestVueApp.Server.ServiceImplementations
 {
     public class TagService : ITagService
     {
-        private readonly IOptions<ApplicationConfiguration> _appConfig;
+        private readonly IPostgresDataAccess _db;
         private readonly ILogger<TagService> _logger;
 
-        public TagService(IOptions<ApplicationConfiguration> appConfig, ILogger<TagService> logger)
+        public TagService(IPostgresDataAccess db, ILogger<TagService> logger)
         {
-            _appConfig = appConfig;
+            _db = db;
             _logger = logger;
         }
 
         public async Task<IEnumerable<Tag>> GetAllTags()
         {
-            var tags = new List<Tag>();
-            using (var conn = new SqlConnection(_appConfig.Value.ConnectionString))
-            {
-                await conn.OpenAsync();
-                var cmd = new SqlCommand("SELECT Id, Name, CreationDate FROM Tag", conn);
-                using (var reader = await cmd.ExecuteReaderAsync())
+            return await _db.QueryAsync(
+                "SELECT Id, Name, CreationDate FROM Tag",
+                null,
+                reader => new Tag
                 {
-                    while (await reader.ReadAsync())
-                    {
-                        tags.Add(new Tag
-                        {
-                            Id = reader.GetInt32(0),
-                            Name = reader.GetString(1),
-                            CreationDate = reader.GetDateTime(2)
-                        });
-                    }
-                }
-            }
-            return tags;
+                    Id = reader.GetInt32(0),
+                    Name = reader.GetString(1),
+                    CreationDate = reader.GetDateTime(2)
+                });
         }
 
         public async Task<Tag> CreateTag(Tag tag)
         {
-            using (var conn = new SqlConnection(_appConfig.Value.ConnectionString))
-            {
-                await conn.OpenAsync();
-                var cmd = new SqlCommand(
-                    "INSERT INTO Tag (Name, CreationDate) VALUES (@Name, @CreationDate)", conn);
-                cmd.Parameters.AddWithValue("@Name", tag.Name);
-                cmd.Parameters.AddWithValue("@CreationDate", tag.CreationDate == default ? DateTime.UtcNow : tag.CreationDate);
+            tag.Id = await _db.ExecuteScalarAsync<int>(
+                "INSERT INTO Tag (Name, CreationDate) VALUES (@Name, @CreationDate) RETURNING Id",
+                command =>
+                {
+                    command.Parameters.AddWithValue("@Name", tag.Name);
+                    command.Parameters.AddWithValue("@CreationDate", tag.CreationDate == default ? DateTime.UtcNow : tag.CreationDate);
+                });
 
-                var tagID = await cmd.ExecuteScalarAsync();
-                tag.Id = Convert.ToInt32(tagID);
-
-                return tag;
-            }
+            return tag;
         }
 
         public async Task<bool> AssignTagsToArt(int artId, List<int> tagIds)
         {
-            using (var conn = new SqlConnection(_appConfig.Value.ConnectionString))
+            var exists = await _db.ExecuteScalarAsync<int>(
+                "SELECT COUNT(1)::int FROM Art WHERE Id = @ArtId",
+                command => command.Parameters.AddWithValue("@ArtId", artId)) > 0;
+            if (!exists)
             {
-                await conn.OpenAsync();
-
-                // Check if artId exists
-                var checkArtCmd = new SqlCommand("SELECT COUNT(1) FROM Art WHERE Id = @ArtId", conn);
-                checkArtCmd.Parameters.AddWithValue("@ArtId", artId);
-                var exists = (int)await checkArtCmd.ExecuteScalarAsync() > 0;
-                if (!exists)
-                {
-                    throw new ArgumentException($"Art with Id {artId} does not exist.");
-                }
-
-                using (var tran = conn.BeginTransaction())
-                {
-                    try
-                    {
-                        // Remove existing tags for this art
-                        var deleteCmd = new SqlCommand(
-                            "DELETE FROM ArtTags WHERE ArtId = @ArtId", conn, tran);
-                        deleteCmd.Parameters.AddWithValue("@ArtId", artId);
-                        await deleteCmd.ExecuteNonQueryAsync();
-
-                        // Insert new tags
-                        foreach (var tagId in tagIds.Distinct())
-                        {
-                            var insertCmd = new SqlCommand(
-                                "INSERT INTO ArtTags (ArtId, TagId, CreationDate) VALUES (@ArtId, @TagId, @CreationDate)", conn, tran);
-                            insertCmd.Parameters.AddWithValue("@ArtId", artId);
-                            insertCmd.Parameters.AddWithValue("@TagId", tagId);
-                            insertCmd.Parameters.AddWithValue("@CreationDate", DateTime.UtcNow);
-                            await insertCmd.ExecuteNonQueryAsync();
-                        }
-
-                        tran.Commit();
-                        return true;
-                    }
-                    catch
-                    {
-                        tran.Rollback();
-                        throw;
-                    }
-                }
+                throw new ArgumentException($"Art with Id {artId} does not exist.");
             }
+
+            return await _db.ExecuteInTransactionAsync(async (conn, tran) =>
+            {
+                using var deleteCmd = new SqlCommand(
+                    "DELETE FROM ArtTags WHERE ArtId = @ArtId", conn, tran);
+                deleteCmd.Parameters.AddWithValue("@ArtId", artId);
+                await deleteCmd.ExecuteNonQueryAsync();
+
+                foreach (var tagId in tagIds.Distinct())
+                {
+                    using var insertCmd = new SqlCommand(
+                        "INSERT INTO ArtTags (ArtId, TagId, CreationDate) VALUES (@ArtId, @TagId, @CreationDate)", conn, tran);
+                    insertCmd.Parameters.AddWithValue("@ArtId", artId);
+                    insertCmd.Parameters.AddWithValue("@TagId", tagId);
+                    insertCmd.Parameters.AddWithValue("@CreationDate", DateTime.UtcNow);
+                    await insertCmd.ExecuteNonQueryAsync();
+                }
+
+                return true;
+            });
         }
 
         public async Task<IEnumerable<Tag>> GetTagsForArt(int artId)
         {
-            var tags = new List<Tag>();
-            using (var conn = new SqlConnection(_appConfig.Value.ConnectionString))
-            {
-                await conn.OpenAsync();
-                var cmd = new SqlCommand(
-                    @"SELECT t.Id, t.Name, t.CreationDate
-                      FROM Tag t
-                      INNER JOIN ArtTags at ON t.Id = at.TagId
-                      WHERE at.ArtId = @ArtId", conn);
-                cmd.Parameters.AddWithValue("@ArtId", artId);
-
-                using (var reader = await cmd.ExecuteReaderAsync())
+            return await _db.QueryAsync(
+                @"SELECT t.Id, t.Name, t.CreationDate
+                  FROM Tag t
+                  INNER JOIN ArtTags at ON t.Id = at.TagId
+                  WHERE at.ArtId = @ArtId",
+                command => command.Parameters.AddWithValue("@ArtId", artId),
+                reader => new Tag
                 {
-                    while (await reader.ReadAsync())
-                    {
-                        tags.Add(new Tag
-                        {
-                            Id = reader.GetInt32(0),
-                            Name = reader.GetString(1),
-                            CreationDate = reader.GetDateTime(2)
-                        });
-                    }
-                }
-            }
-            return tags;
+                    Id = reader.GetInt32(0),
+                    Name = reader.GetString(1),
+                    CreationDate = reader.GetDateTime(2)
+                });
         }
 
         public async Task<bool> RemoveTagFromArt(int artId, int tagId, Artist artist)
         {
-            using (var conn = new SqlConnection(_appConfig.Value.ConnectionString))
-            {
-                await conn.OpenAsync();
-                var cmd = new SqlCommand(
-                    "DELETE FROM ArtTags WHERE ArtId = @ArtId AND TagId = @TagId", conn);
-                cmd.Parameters.AddWithValue("@ArtId", artId);
-                cmd.Parameters.AddWithValue("@TagId", tagId);
+            var rows = await _db.ExecuteAsync(
+                "DELETE FROM ArtTags WHERE ArtId = @ArtId AND TagId = @TagId",
+                command =>
+                {
+                    command.Parameters.AddWithValue("@ArtId", artId);
+                    command.Parameters.AddWithValue("@TagId", tagId);
+                });
 
-                var rows = await cmd.ExecuteNonQueryAsync();
-                return rows > 0;
-            }
+            return rows > 0;
         }
 
         public async Task<bool> DeleteTag(int tagId)
         {
-            using (var conn = new SqlConnection(_appConfig.Value.ConnectionString))
+            return await _db.ExecuteInTransactionAsync(async (conn, tran) =>
             {
-                await conn.OpenAsync();
-                using (var tran = conn.BeginTransaction())
+                using var existsCmd = new SqlCommand("SELECT COUNT(1)::int FROM Tag WHERE Id = @Id", conn, tran);
+                existsCmd.Parameters.AddWithValue("@Id", tagId);
+                var exists = (int)await existsCmd.ExecuteScalarAsync() > 0;
+                if (!exists)
                 {
-                    try
-                    {
-                        // Check existence
-                        var existsCmd = new SqlCommand("SELECT COUNT(1) FROM Tag WHERE Id = @Id", conn, tran);
-                        existsCmd.Parameters.AddWithValue("@Id", tagId);
-                        var exists = (int)await existsCmd.ExecuteScalarAsync() > 0;
-                        if (!exists)
-                        {
-                            tran.Rollback();
-                            return false;
-                        }
-
-                        // Remove relationships, then delete tag
-                        var delLinks = new SqlCommand("DELETE FROM ArtTags WHERE TagId = @Id", conn, tran);
-                        delLinks.Parameters.AddWithValue("@Id", tagId);
-                        await delLinks.ExecuteNonQueryAsync();
-
-                        var delTag = new SqlCommand("DELETE FROM Tag WHERE Id = @Id", conn, tran);
-                        delTag.Parameters.AddWithValue("@Id", tagId);
-                        var affected = await delTag.ExecuteNonQueryAsync();
-
-                        tran.Commit();
-                        return affected > 0;
-                    }
-                    catch
-                    {
-                        tran.Rollback();
-                        throw;
-                    }
+                    return false;
                 }
-            }
+
+                using var delLinks = new SqlCommand("DELETE FROM ArtTags WHERE TagId = @Id", conn, tran);
+                delLinks.Parameters.AddWithValue("@Id", tagId);
+                await delLinks.ExecuteNonQueryAsync();
+
+                using var delTag = new SqlCommand("DELETE FROM Tag WHERE Id = @Id", conn, tran);
+                delTag.Parameters.AddWithValue("@Id", tagId);
+                var affected = await delTag.ExecuteNonQueryAsync();
+
+                return affected > 0;
+            });
         }
     }
 }

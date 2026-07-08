@@ -1,5 +1,4 @@
-using ImageMagick;
-using Microsoft.Data.SqlClient;
+﻿using ImageMagick;
 using Microsoft.Extensions.Options;
 using MyTestVueApp.Server.Configuration;
 using MyTestVueApp.Server.Entities;
@@ -171,7 +170,7 @@ namespace MyTestVueApp.Server.ServiceImplementations
                     @"
                     SELECT Artspace.ArtspaceId,
                       Artspace.Title,
-                      Artspace.Shape.STAsText()
+                      ST_AsText(Artspace.Shape)
                     FROM Artspace;";
                 using (var command = new SqlCommand(query1, connection))
                 {
@@ -209,7 +208,7 @@ namespace MyTestVueApp.Server.ServiceImplementations
                     $@"
                     SELECT Artspace.ArtspaceId,
                       Artspace.Title,
-                      Artspace.Shape.STAsText()
+                      ST_AsText(Artspace.Shape)
                     FROM Artspace
                     WHERE Artspace.ArtspaceId = @artspaceId";
                 using (var command = new SqlCommand(query1, connection))
@@ -259,7 +258,7 @@ namespace MyTestVueApp.Server.ServiceImplementations
                         Art.pointId
                     FROM ART  
                     WHERE Art.pointId = @pointId 
-                    AND isPublic = 1
+                    AND isPublic = true
                     ";
                 using (var command = new SqlCommand(query1, connection))
                 {
@@ -307,7 +306,9 @@ namespace MyTestVueApp.Server.ServiceImplementations
                     connection.Open();
 
                     var query = @"
-                    INSERT INTO Points(latitude,longitude, title, artspaceId) OUTPUT INSERTED.PointId VALUES (@Latitude,@Longitude, @Title, @Artspace);
+                    INSERT INTO Points(latitude,longitude, title, artspaceId)
+                    VALUES (@Latitude,@Longitude, @Title, @Artspace)
+                    RETURNING PointId;
                 ";
                     using (var command = new SqlCommand(query, connection))
                     {

@@ -1,7 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.SqlClient;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
 using MyTestVueApp.Server.Configuration;
 using MyTestVueApp.Server.Entities;
 using MyTestVueApp.Server.Interfaces;
@@ -35,6 +33,10 @@ namespace MyTestVueApp.Server.Controllers
         /// </summary>
         [HttpPost]
         [Route("InsertCommentLike")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> InsertCommentLike([FromQuery]int commentId)
         {
             try
@@ -86,6 +88,10 @@ namespace MyTestVueApp.Server.Controllers
 
         [HttpDelete]
         [Route("RemoveCommentLike")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> RemoveCommentLike([FromQuery] int commentId)
         {
             try
@@ -137,7 +143,9 @@ namespace MyTestVueApp.Server.Controllers
         /// <returns>True if it is liked, false otherwise</returns>
         [HttpGet]
         [Route("IsCommentLiked")]
-        [ProducesResponseType(typeof(bool), 200)]
+        [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> IsCommentLiked([FromQuery] int commentId)
         {
             try
@@ -148,14 +156,7 @@ namespace MyTestVueApp.Server.Controllers
                     if (artist != null)
                     {
                         var liked = await CommentLikeService.IsCommentLiked(artist, commentId);
-                        if (liked == null)
-                        {
-                            return NotFound("Comment not found.");
-                        }
-                        else
-                        {
-                            return Ok(liked);
-                        }
+                        return Ok(liked);
                     }
                     else
                     {

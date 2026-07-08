@@ -1,0 +1,16 @@
+.git
+.github
+.vercel
+.vs
+**/bin
+**/obj
+**/node_modules
+**/tests_output
+.env
+.env*
+*.user
+*.suo
+*.log
+package-lock.json
+mytestvueapp.client/dist
+MyTestVueApp.Server/appsettings.json

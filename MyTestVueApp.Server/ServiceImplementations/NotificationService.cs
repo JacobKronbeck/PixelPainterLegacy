@@ -1,8 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc.Diagnostics;
-using Microsoft.Data.SqlClient;
-using Microsoft.Extensions.Options;
-using Microsoft.Identity.Client;
-using MyTestVueApp.Server.Configuration;
+using Microsoft.AspNetCore.Mvc.Diagnostics;
+using MyTestVueApp.Server.Database;
 using MyTestVueApp.Server.Entities;
 using MyTestVueApp.Server.Enums;
 using MyTestVueApp.Server.Interfaces;
@@ -12,7 +9,7 @@ namespace MyTestVueApp.Server.ServiceImplementations
 {
     public class NotificationService : INotificationService
     {
-        private readonly IOptions<ApplicationConfiguration> appConfig;
+        private readonly IPostgresDataAccess db;
         private readonly ILogger<NotificationService> logger;
         private readonly IArtAccessService artService;
         private readonly ICommentAccessService commentService;
@@ -23,9 +20,9 @@ namespace MyTestVueApp.Server.ServiceImplementations
         private readonly ICommentDislikeService commentDislikeService;
 
 
-        public NotificationService(IOptions<ApplicationConfiguration> AppConfig, ILogger<NotificationService> Logger, IArtAccessService ArtAccessService, ICommentAccessService CommentAccessService, ILikeService LikeService, IDislikeService DislikeService, IArtistService ArtistService, ICommentLikeService CommentLikeService, ICommentDislikeService CommentDislikeService)
+        public NotificationService(IPostgresDataAccess Db, ILogger<NotificationService> Logger, IArtAccessService ArtAccessService, ICommentAccessService CommentAccessService, ILikeService LikeService, IDislikeService DislikeService, IArtistService ArtistService, ICommentLikeService CommentLikeService, ICommentDislikeService CommentDislikeService)
         {
-            appConfig = AppConfig;
+            db = Db;
             logger = Logger;
             artService = ArtAccessService;
             commentService = CommentAccessService;
@@ -202,54 +199,47 @@ namespace MyTestVueApp.Server.ServiceImplementations
         }
         public async Task<bool> MarkComment(int commentId)
         {
-            var connectionString = appConfig.Value.ConnectionString;
-            using var connection = new SqlConnection(connectionString);
-            await connection.OpenAsync();
+            var rows = await db.ExecuteAsync(
+                "UPDATE Comment SET Viewed = 1 WHERE Id = @commentId",
+                command => command.Parameters.AddWithValue("@commentId", commentId));
 
-            string query = "UPDATE Comment SET Viewed = 1 WHERE Id = @commentId";
-            using var command = new SqlCommand(query, connection);
-            command.Parameters.AddWithValue("@commentId", commentId);
-
-            return await command.ExecuteNonQueryAsync() > 0;
+            return rows > 0;
         }
         public async Task<bool> MarkLike(int artId, int artistId)
         {
-            var connectionString = appConfig.Value.ConnectionString;
-            using var connection = new SqlConnection(connectionString);
-            await connection.OpenAsync();
+            var rows = await db.ExecuteAsync(
+                "UPDATE Likes SET Viewed = 1 WHERE ArtId = @artId AND ArtistId = @artistId",
+                command =>
+                {
+                    command.Parameters.AddWithValue("@artId", artId);
+                    command.Parameters.AddWithValue("@artistId", artistId);
+                });
 
-            string query = "UPDATE Likes SET Viewed = 1 WHERE ArtId = @artId AND ArtistId = @artistId";
-            using var command = new SqlCommand(query, connection);
-            command.Parameters.AddWithValue("@artId", artId);
-            command.Parameters.AddWithValue("@artistId", artistId);
-
-            return await command.ExecuteNonQueryAsync() > 0;
+            return rows > 0;
         }
         public async Task<bool> MarkDislike(int artId, int artistId)
         {
-            var connectionString = appConfig.Value.ConnectionString;
-            using var connection = new SqlConnection(connectionString);
-            await connection.OpenAsync();
+            var rows = await db.ExecuteAsync(
+                "UPDATE Dislikes SET Viewed = 1 WHERE ArtId = @artId AND ArtistId = @artistId",
+                command =>
+                {
+                    command.Parameters.AddWithValue("@artId", artId);
+                    command.Parameters.AddWithValue("@artistId", artistId);
+                });
 
-            string query = "UPDATE Dislikes SET Viewed = 1 WHERE ArtId = @artId AND ArtistId = @artistId";
-            using var command = new SqlCommand(query, connection);
-            command.Parameters.AddWithValue("@artId", artId);
-            command.Parameters.AddWithValue("@artistId", artistId);
-
-            return await command.ExecuteNonQueryAsync() > 0;
+            return rows > 0;
         }
         public async Task<bool> UpdateNotificationsEnabledAsync(int artistId, int notificationsEnabled)
         {
-            var connectionString = appConfig.Value.ConnectionString;
-            using var connection = new SqlConnection(connectionString);
-            await connection.OpenAsync();
+            var rows = await db.ExecuteAsync(
+                "UPDATE Artist SET NotificationsEnabled = @notificationsEnabled WHERE Id = @artistId",
+                command =>
+                {
+                    command.Parameters.AddWithValue("@notificationsEnabled", notificationsEnabled);
+                    command.Parameters.AddWithValue("@artistId", artistId);
+                });
 
-            string query = "UPDATE Artist SET NotificationsEnabled = @notificationsEnabled WHERE Id = @artistId";
-            using var command = new SqlCommand(query, connection);
-            command.Parameters.AddWithValue("@notificationsEnabled", notificationsEnabled);
-            command.Parameters.AddWithValue("@artistId", artistId);
-
-            return await command.ExecuteNonQueryAsync() > 0;
+            return rows > 0;
         }
     }
 }

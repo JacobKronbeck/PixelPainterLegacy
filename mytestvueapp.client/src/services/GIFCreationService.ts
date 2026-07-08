@@ -1,7 +1,8 @@
+import { apiFetch } from './apiClient';
 export default class GIFCreationService {
   public static async createGIF(frames: string[], fps: number): Promise<void> {
     try {
-      const response = await fetch("/GIFCreation/CreateGif", {
+      const response = await apiFetch("/GIFCreation/CreateGif", {
         method: "POST",
         body: JSON.stringify({ frames: frames, fps: fps }),
         headers: { "Content-Type": "application/json" }
@@ -29,7 +30,7 @@ export default class GIFCreationService {
     fps: number
   ): Promise<string> {
     try {
-      const response = await fetch("/GIFCreation/CreateGifCode", {
+      const response = await apiFetch("/GIFCreation/CreateGifCode", {
         method: "POST",
         body: JSON.stringify({ frames: frames, fps: fps }),
         headers: { "Content-Type": "application/json" }

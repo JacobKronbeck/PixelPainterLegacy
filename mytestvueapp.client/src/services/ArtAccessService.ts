@@ -1,10 +1,11 @@
+import { apiFetch } from './apiClient';
 import Art from "../entities/Art";
 import Codec from "@/utils/Codec";
 
 export default class ArtAccessService {
   public static async getAllArt(): Promise<Art[]> {
     try {
-      const response = await fetch("/artaccess/GetAllArt");
+      const response = await apiFetch("/artaccess/GetAllArt");
       if (!response.ok) {
         console.log("Bad response");
         throw new Error("Error grabbing art");
@@ -27,7 +28,7 @@ export default class ArtAccessService {
 
   public static async getAllArtByUserID(id: number): Promise<Art[]> {
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         `/artaccess/GetAllArtByUserID?id=${encodeURIComponent(id)}`
       );
       if (!response.ok) throw new Error(`Failed to load art (${response.status})`);
@@ -43,7 +44,7 @@ export default class ArtAccessService {
 
   public static async getLikedArt(artistId: number): Promise<Art[]> {
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         `/artaccess/GetLikedArt?artistId=${encodeURIComponent(artistId)}`
       );
       if (!response.ok) {
@@ -61,7 +62,7 @@ export default class ArtAccessService {
   }
   public static async getCurrentUsersArt(): Promise<Art[]> {
     try {
-      const response = await fetch("/artaccess/GetCurrentUsersArt");
+      const response = await apiFetch("/artaccess/GetCurrentUsersArt");
 
       if (!response.ok) {
         throw new Error("Error: Bad response");
@@ -83,7 +84,7 @@ export default class ArtAccessService {
 
   public static async getArtById(artId: number): Promise<Art> {
     try {
-      const response = await fetch(`/artaccess/GetArtById?id=${artId}`);
+      const response = await apiFetch(`/artaccess/GetArtById?id=${artId}`);
 
       if (!response.ok) {
         throw new Error("Error: Bad response");
@@ -114,7 +115,7 @@ export default class ArtAccessService {
 
       const request = "/artaccess/SaveArt";
 
-      const response = await fetch(request, {
+      const response = await apiFetch(request, {
         method: "PUT",
         body: JSON.stringify(art),
         headers: { "Content-Type": "application/json" }
@@ -136,7 +137,7 @@ export default class ArtAccessService {
       }
       const request = "/artaccess/SaveGif";
 
-      const response = await fetch(request, {
+      const response = await apiFetch(request, {
         method: "PUT",
         body: JSON.stringify(art),
         headers: { "Content-Type": "application/json" }
@@ -159,7 +160,7 @@ export default class ArtAccessService {
   }
   public static async getGif(GifId: number): Promise<Art[]> {
     try {
-      const response = await fetch(`/artaccess/GetGifById?id=${GifId}`);
+      const response = await apiFetch(`/artaccess/GetGifById?id=${GifId}`);
 
       if (!response.ok) {
         throw new Error("Error: Bad response");
@@ -184,7 +185,7 @@ export default class ArtAccessService {
 
   public static async deleteArt(ArtId: number): Promise<void> {
     try {
-      const response = await fetch(`/artaccess/DeleteArt?ArtId=${ArtId}`, {
+      const response = await apiFetch(`/artaccess/DeleteArt?ArtId=${ArtId}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" }
       });
@@ -201,7 +202,7 @@ export default class ArtAccessService {
     ArtistId: number
   ): Promise<void> {
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         `/artaccess/DeleteContributingArtist?ArtId=${ArtistId}`,
         {
           method: "DELETE",

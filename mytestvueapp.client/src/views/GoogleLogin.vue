@@ -10,6 +10,7 @@ import Button from "primevue/button";
 import { onMounted, ref } from "vue";
 import router from "@/router";
 import LoginService from "@/services/LoginService";
+import { apiUrl } from "@/services/apiClient";
 
 const isLoggedIn = ref<boolean>(false);
 
@@ -29,6 +30,6 @@ function buttonClick(): void {
 
 function login(): void {
   var url = new URL(window.location.href);
-  window.location.href = `login/Login?returnUrl=${url.origin}/LoginRedirect`;
+  window.location.href = apiUrl(`/login/Login?returnUrl=${url.origin}/LoginRedirect`);
 }
 </script>

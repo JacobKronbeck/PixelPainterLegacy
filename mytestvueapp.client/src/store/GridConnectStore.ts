@@ -5,6 +5,7 @@ import { Vector2 } from "@/entities/Vector2";
 import * as SignalR from "@microsoft/signalr";
 import type Artist from '@/entities/Artist';
 import { bus } from '@/bus/GridBus';
+import { apiUrl } from '@/services/apiClient';
 
 export const useSignalStore = defineStore('signal', {
     state: () => ({
@@ -20,7 +21,7 @@ export const useSignalStore = defineStore('signal', {
             }
 
             this.connection = new SignalR.HubConnectionBuilder()
-                .withUrl("http://localhost:7154/signalhub", {
+                .withUrl(apiUrl("/signalHub"), {
                   skipNegotiation: true,
                   transport: SignalR.HttpTransportType.WebSockets
                 })
