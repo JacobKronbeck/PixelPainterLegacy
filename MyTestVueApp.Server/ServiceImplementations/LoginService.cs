@@ -179,7 +179,12 @@ namespace MyTestVueApp.Server.ServiceImplementations
         {
             Random rnd = new Random();
 
-            var username = getAdjective(rnd.Next(50)) + getNoun(rnd.Next(50)) + rnd.Next(1000);
+            var suffix = rnd.Next(1000).ToString();
+            var name = getAdjective(rnd.Next(50)) + getNoun(rnd.Next(50));
+            var maxNameLength = 20 - suffix.Length;
+            var username = name.Length > maxNameLength
+                ? name.Substring(0, maxNameLength) + suffix
+                : name + suffix;
 
             return username;
         }
