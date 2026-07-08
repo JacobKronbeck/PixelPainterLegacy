@@ -9,6 +9,8 @@ namespace MyTestVueApp.Server.Configuration
         public string ClientId { get; set; }
         public string ClientSecret { get; set; }
         public string RedirectUrl { get; set; }
+        public string? OAuthRedirectUrl { get; set; }
+        public string? PostLoginRedirectUrl { get; set; }
 
     }
 }
