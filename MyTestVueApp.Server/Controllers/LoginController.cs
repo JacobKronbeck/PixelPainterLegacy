@@ -365,11 +365,18 @@ namespace MyTestVueApp.Server.Controllers
         {
             if (!string.IsNullOrWhiteSpace(AppConfig.Value.OAuthRedirectUrl))
             {
-                return AppConfig.Value.OAuthRedirectUrl;
+                return AppConfig.Value.OAuthRedirectUrl.Trim();
             }
 
             var scheme = (Request.Headers["X-Forwarded-Proto"].FirstOrDefault() ?? Request.Scheme).Split(',')[0].Trim();
             var host = (Request.Headers["X-Forwarded-Host"].FirstOrDefault() ?? Request.Host.Value).Split(',')[0].Trim();
+
+            if (!host.StartsWith("localhost", StringComparison.OrdinalIgnoreCase)
+                && !host.StartsWith("127.0.0.1", StringComparison.OrdinalIgnoreCase))
+            {
+                scheme = "https";
+            }
+
             return $"{scheme}://{host}/login/LoginRedirect";
         }
 
