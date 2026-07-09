@@ -1,6 +1,11 @@
 import { apiFetch } from './apiClient';
 import type Artist from "@/entities/Artist";
 
+export interface AuthSession {
+  isAuthenticated: boolean;
+  user: Artist;
+}
+
 export default class LoginService {
   private static async fetchWithRetry(path: string, init?: RequestInit): Promise<Response> {
     const response = await apiFetch(path, init);
@@ -14,12 +19,8 @@ export default class LoginService {
 
   public static async isLoggedIn(): Promise<boolean> {
     try {
-      const response = await LoginService.fetchWithRetry("/login/IsLoggedIn");
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
-      const isLoggedIn: boolean = (await response.json()) as boolean;
-      return isLoggedIn;
+      const session = await LoginService.getCurrentSession();
+      return session.isAuthenticated;
     } catch (error) {
       console.error("Error checking login status:", error);
       return false;
@@ -28,7 +29,7 @@ export default class LoginService {
 
   public static async logout(): Promise<void> {
     try {
-      const response = await apiFetch("/login/Logout");
+      const response = await apiFetch("/api/v2/auth/logout", { method: "POST" });
       if (!response.ok) {
         throw new Error("Network response was not ok");
       }
@@ -39,7 +40,10 @@ export default class LoginService {
 
   public static async GetArtistByName(name: string): Promise<Artist> {
     try {
-      const response = await apiFetch(`/login/GetArtistByName?name=${name}`);
+      const response = await apiFetch(`/api/v2/accounts/by-name/${encodeURIComponent(name)}`);
+      if (!response.ok) {
+        throw new Error(`Error retrieving artist (${response.status})`);
+      }
       const json = await response.json();
 
       return json as Artist;
@@ -68,17 +72,19 @@ export default class LoginService {
   }
 
   public static async getCurrentUser(): Promise<Artist> {
+    const session = await LoginService.getCurrentSession();
+    return session.user;
+  }
+
+  public static async getCurrentSession(): Promise<AuthSession> {
     try {
-      const response = await LoginService.fetchWithRetry("/login/GetCurrentUser");
+      const response = await LoginService.fetchWithRetry("/api/v2/auth/me");
 
       if (!response.ok) {
         throw new Error("Error retrieving user");
       }
 
-      const data = await response.json();
-      const user: Artist = data;
-
-      return user;
+      return (await response.json()) as AuthSession;
     } catch (error) {
       console.error(error);
       throw error;
@@ -87,19 +93,11 @@ export default class LoginService {
 
   public static async getIsAdmin(): Promise<boolean> {
     try {
-      const response = await LoginService.fetchWithRetry("/login/GetIsAdmin");
-
-      if (!response.ok) {
-        throw new Error("Error: Bad response");
-      }
-
-      const data = await response.json();
-      const isAdmin: boolean = data;
-
-      return isAdmin;
+      const session = await LoginService.getCurrentSession();
+      return !!session.user?.isAdmin;
     } catch (error) {
       console.error(error);
-      throw error;
+      return false;
     }
   }
 

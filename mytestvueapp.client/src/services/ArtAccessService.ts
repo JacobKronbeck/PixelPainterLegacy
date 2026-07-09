@@ -29,7 +29,7 @@ export default class ArtAccessService {
   public static async getAllArtByUserID(id: number): Promise<Art[]> {
     try {
       const response = await apiFetch(
-        `/artaccess/GetAllArtByUserID?id=${encodeURIComponent(id)}`
+        `/api/v2/accounts/${encodeURIComponent(id)}/art`
       );
       if (!response.ok) throw new Error(`Failed to load art (${response.status})`);
       const json = await response.json();
@@ -45,7 +45,7 @@ export default class ArtAccessService {
   public static async getLikedArt(artistId: number): Promise<Art[]> {
     try {
       const response = await apiFetch(
-        `/artaccess/GetLikedArt?artistId=${encodeURIComponent(artistId)}`
+        `/api/v2/accounts/${encodeURIComponent(artistId)}/liked-art`
       );
       if (!response.ok) {
         if (response.status === 401 || response.status === 403) return [];
@@ -113,13 +113,16 @@ export default class ArtAccessService {
     try {
       art.creationDate = new Date().toISOString();
 
-      const request = "/artaccess/SaveArt";
+      const request = "/api/v2/art";
 
       const response = await apiFetch(request, {
-        method: "PUT",
+        method: "POST",
         body: JSON.stringify(art),
         headers: { "Content-Type": "application/json" }
       });
+      if (!response.ok) {
+        throw new Error(`Error saving art (${response.status})`);
+      }
       const json = await response.json();
       const artpiece = json as Art;
 

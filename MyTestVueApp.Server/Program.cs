@@ -4,6 +4,7 @@ using MyTestVueApp.Server.Database;
 using MyTestVueApp.Server.Interfaces;
 using MyTestVueApp.Server.ServiceImplementations;
 using MyTestVueApp.Server.Hubs;
+using MyTestVueApp.Server.Auth;
 using Microsoft.OpenApi.Models;
 using System.Reflection;
 
@@ -72,6 +73,10 @@ builder.Services.AddTransient<ITagService, TagService>();
 builder.Services.AddTransient<IArtistService, ArtistService>();
 builder.Services.AddTransient<IMapAccessService, MapAccessService>();
 builder.Services.AddTransient<IFriendsService, FriendsService>();
+builder.Services.AddTransient<IGoogleOAuthClient, GoogleOAuthClient>();
+builder.Services.AddTransient<ICurrentUserAccessor, CurrentUserAccessor>();
+builder.Services.AddTransient<IV2AccountService, V2AccountService>();
+builder.Services.AddTransient<IV2ArtService, V2ArtService>();
 
 var app = builder.Build();
 
@@ -109,3 +114,7 @@ if (hasWebRoot)
 app.MapHub<SignalHub>("/signalHub");
 
 app.Run();
+
+public partial class Program
+{
+}
