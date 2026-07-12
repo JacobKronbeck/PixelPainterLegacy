@@ -5,6 +5,18 @@
   "framework": "vite",
   "rewrites": [
     {
+      "source": "/api/(.*)",
+      "destination": "https://pixelpainterlegacy-pai.onrender.com/api/$1"
+    },
+    {
+      "source": "/signalHub",
+      "destination": "https://pixelpainterlegacy-pai.onrender.com/signalHub"
+    },
+    {
+      "source": "/signalHub/(.*)",
+      "destination": "https://pixelpainterlegacy-pai.onrender.com/signalHub/$1"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
