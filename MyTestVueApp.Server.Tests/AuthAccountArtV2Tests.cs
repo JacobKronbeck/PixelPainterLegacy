@@ -30,7 +30,8 @@ namespace MyTestVueApp.Server.Tests
         {
             var client = _factory.CreateClient(new WebApplicationFactoryClientOptions
             {
-                AllowAutoRedirect = false
+                AllowAutoRedirect = false,
+                BaseAddress = new Uri("https://localhost")
             });
 
             var response = await client.GetAsync("/api/v2/auth/callback?code=test-code");
