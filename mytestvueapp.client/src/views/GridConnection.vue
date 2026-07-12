@@ -28,7 +28,7 @@ import { apiUrl } from "@/services/apiClient";
 const loggedIn = ref<boolean>(false);
 
 function goToGrid(): void {
-  window.location.replace(apiUrl("/login/Login"));
+  window.location.replace(apiUrl("/api/v2/auth/login"));
 }
 
 onMounted(async () => {

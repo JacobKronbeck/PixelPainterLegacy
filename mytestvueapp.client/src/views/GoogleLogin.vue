@@ -30,6 +30,6 @@ function buttonClick(): void {
 
 function login(): void {
   var url = new URL(window.location.href);
-  window.location.href = apiUrl(`/login/Login?returnUrl=${url.origin}/LoginRedirect`);
+  window.location.href = apiUrl("/api/v2/auth/login");
 }
 </script>

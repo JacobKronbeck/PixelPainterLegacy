@@ -25,7 +25,7 @@ onMounted(async () => {
 function buttonClick(): void {
   if (isLoggedIn.value) {
     LoginService.getCurrentUser().then((user: Artist) => {
-      router.push(`/accountpage/${user.name}`);
+      router.push(`/accountpage/${encodeURIComponent(user.name)}#created_art`);
     });
   } else {
     login();
@@ -33,6 +33,6 @@ function buttonClick(): void {
 }
 
 function login(): void {
-  window.location.replace(apiUrl("/login/Login"));
+  window.location.replace(apiUrl("/api/v2/auth/login"));
 }
 </script>
