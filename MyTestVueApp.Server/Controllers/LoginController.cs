@@ -52,20 +52,28 @@ namespace MyTestVueApp.Server.Controllers
         [Route("LoginRedirect")]
         public async Task<IActionResult> RedirectLogin(string code, string scope, string authuser, string prompt)
         {
-            var userInfo = await LoginService.GetUserId(code, GetOAuthRedirectUri());
-
-            // Add Id to cookies
-            Response.Cookies.Append("GoogleOAuth", userInfo.Id, new CookieOptions
+            try
             {
-                HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.None,
-                Expires = DateTimeOffset.UtcNow.AddDays(14)
-            });
+                var userInfo = await LoginService.GetUserId(code, GetOAuthRedirectUri());
 
-            await LoginService.SignupActions(userInfo.Id, userInfo.Email);
+                // Add Id to cookies
+                Response.Cookies.Append("GoogleOAuth", userInfo.Id, new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true,
+                    SameSite = SameSiteMode.None,
+                    Expires = DateTimeOffset.UtcNow.AddDays(14)
+                });
 
-            return Redirect(GetPostLoginRedirectUri());
+                await LoginService.SignupActions(userInfo.Id, userInfo.Email);
+
+                return Redirect(GetPostLoginRedirectUri());
+            }
+            catch (Google.Apis.Auth.OAuth2.Responses.TokenResponseException ex)
+            {
+                Logger.LogWarning(ex, "OAuth provider rejected the legacy callback code");
+                return BadRequest("OAuth code was rejected.");
+            }
         }
 
         [HttpGet]

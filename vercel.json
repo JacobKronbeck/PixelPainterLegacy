@@ -9,6 +9,62 @@
       "destination": "https://pixelpainterlegacy-pai.onrender.com/api/$1"
     },
     {
+      "source": "/artaccess/(.*)",
+      "destination": "https://pixelpainterlegacy-pai.onrender.com/artaccess/$1"
+    },
+    {
+      "source": "/comment/(.*)",
+      "destination": "https://pixelpainterlegacy-pai.onrender.com/comment/$1"
+    },
+    {
+      "source": "/commentlike/(.*)",
+      "destination": "https://pixelpainterlegacy-pai.onrender.com/commentlike/$1"
+    },
+    {
+      "source": "/commentdislike/(.*)",
+      "destination": "https://pixelpainterlegacy-pai.onrender.com/commentdislike/$1"
+    },
+    {
+      "source": "/like/(.*)",
+      "destination": "https://pixelpainterlegacy-pai.onrender.com/like/$1"
+    },
+    {
+      "source": "/dislike/(.*)",
+      "destination": "https://pixelpainterlegacy-pai.onrender.com/dislike/$1"
+    },
+    {
+      "source": "/friends/(.*)",
+      "destination": "https://pixelpainterlegacy-pai.onrender.com/friends/$1"
+    },
+    {
+      "source": "/GIFCreation/(.*)",
+      "destination": "https://pixelpainterlegacy-pai.onrender.com/GIFCreation/$1"
+    },
+    {
+      "source": "/login/(.*)",
+      "destination": "https://pixelpainterlegacy-pai.onrender.com/login/$1"
+    },
+    {
+      "source": "/mapaccess/(.*)",
+      "destination": "https://pixelpainterlegacy-pai.onrender.com/mapaccess/$1"
+    },
+    {
+      "source": "/notification/(.*)",
+      "destination": "https://pixelpainterlegacy-pai.onrender.com/notification/$1"
+    },
+    {
+      "source": "/socket/(.*)",
+      "destination": "https://pixelpainterlegacy-pai.onrender.com/socket/$1"
+    },
+    {
+      "source": "/tag/(.*)",
+      "destination": "https://pixelpainterlegacy-pai.onrender.com/tag/$1"
+    },
+    {
+      "source": "/healthz",
+      "destination": "https://pixelpainterlegacy-pai.onrender.com/healthz"
+    },
+    {
       "source": "/signalHub",
       "destination": "https://pixelpainterlegacy-pai.onrender.com/signalHub"
     },

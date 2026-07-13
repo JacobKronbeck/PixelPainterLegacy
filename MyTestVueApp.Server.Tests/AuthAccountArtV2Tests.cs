@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.Configuration;
 using MyTestVueApp.Server.Contracts.V2;
 using Npgsql;
 using Xunit;
@@ -23,6 +24,31 @@ namespace MyTestVueApp.Server.Tests
             var response = await client.GetAsync("/api/v2/auth/me");
 
             Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task Login_UsesConfiguredFrontendProxyCallback()
+        {
+            const string callbackUrl = "https://pixel-painter-legacy.vercel.app/api/v2/auth/callback";
+            using var configuredFactory = _factory.WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureAppConfiguration((_, config) =>
+                {
+                    config.AddInMemoryCollection(new Dictionary<string, string?>
+                    {
+                        ["ApplicationConfiguration:OAuthRedirectUrl"] = callbackUrl
+                    });
+                });
+            });
+            var client = configuredFactory.CreateClient(new WebApplicationFactoryClientOptions
+            {
+                AllowAutoRedirect = false
+            });
+
+            var response = await client.GetAsync("/api/v2/auth/login");
+
+            Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+            Assert.Equal($"{callbackUrl}?code=fake-code", response.Headers.Location!.ToString());
         }
 
         [Fact]

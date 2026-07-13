@@ -38,7 +38,6 @@ var frontendOrigins = new[]
     builder.Configuration["ApplicationConfiguration:RedirectUrl"],
     builder.Configuration["ApplicationConfiguration:PostLoginRedirectUrl"],
     "https://pixel-painter-legacy.vercel.app",
-    "https://pixelpainter.app",
     "http://localhost:5173"
 }
     .Where(origin => !string.IsNullOrWhiteSpace(origin))

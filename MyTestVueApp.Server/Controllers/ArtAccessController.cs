@@ -164,7 +164,7 @@ namespace MyTestVueApp.Server.Controllers
 
                 if (art == null)
                 {
-                    throw new ArgumentException("Art with id: " + id + " can not be found");
+                    return NotFound("Art with id: " + id + " can not be found");
                 }
 
                 if (art.IsPublic)

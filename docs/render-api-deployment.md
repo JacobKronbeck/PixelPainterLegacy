@@ -35,6 +35,7 @@ ApplicationConfiguration__ClientId
 ApplicationConfiguration__ClientSecret
 ApplicationConfiguration__RedirectUrl
 ApplicationConfiguration__PostLoginRedirectUrl
+ApplicationConfiguration__OAuthRedirectUrl
 ```
 
 Use the Supabase pooled Postgres connection string for `ApplicationConfiguration__ConnectionString`.
@@ -43,27 +44,24 @@ Use your frontend origin for `ApplicationConfiguration__RedirectUrl` and
 `ApplicationConfiguration__PostLoginRedirectUrl`, including a trailing slash:
 
 ```text
-https://your-vercel-frontend-host/
+https://pixel-painter-legacy.vercel.app/
 ```
 
-The API derives Google's OAuth callback URL from the public API request host by default. In Google Cloud Console, the Authorized redirect URI must be:
+OAuth must return through the Vercel proxy so the session cookie belongs to the
+same origin as the frontend. Configure Render with:
 
 ```text
-https://your-render-api-host/login/LoginRedirect
+ApplicationConfiguration__OAuthRedirectUrl=https://pixel-painter-legacy.vercel.app/api/v2/auth/callback
 ```
 
-If you ever need to force that callback instead of deriving it, set:
+In Google Cloud Console, configure this exact Authorized redirect URI:
 
 ```text
-ApplicationConfiguration__OAuthRedirectUrl=https://your-render-api-host/login/LoginRedirect
+https://pixel-painter-legacy.vercel.app/api/v2/auth/callback
 ```
 
 ## Vercel Follow-Up
 
-After Render provisions the API, copy the Render service URL and set this on the Vercel frontend project:
-
-```text
-VITE_API_BASE_URL=https://your-render-api-host
-```
-
-Redeploy the Vercel project after saving the variable.
+Keep production API calls on the Vercel origin. Do not set `VITE_API_BASE_URL`
+for the production deployment; `vercel.json` proxies API and SignalR requests
+to Render while preserving a first-party browser session.

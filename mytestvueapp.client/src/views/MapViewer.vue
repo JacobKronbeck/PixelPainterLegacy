@@ -53,7 +53,7 @@
                         let popupContent = `<b>${point.title}</b>`
 
                         pointArt.slice(0, 3).forEach(taggedArt => {
-                            popupContent += `<br><a href='http://pixelpainter.app/art/${taggedArt.id}' target="_blank">${taggedArt.title}</a>`;
+                            popupContent += `<br><a href='/art/${taggedArt.id}' target="_blank">${taggedArt.title}</a>`;
                         });
 
 
@@ -141,7 +141,7 @@
     async function handleViewByLocation(pointId: number) {
         console.log("Function ran before redirect " + pointId);
         //router.push(`/gallery/${pointId}`)
-        window.location.href = "http://pixelpainter.app/gallery/location/" + pointId;
+        window.location.href = "/gallery/location/" + pointId;
     }
 
     (window as any).handleViewByLocation = handleViewByLocation;
