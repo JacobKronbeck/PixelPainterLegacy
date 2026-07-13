@@ -59,7 +59,7 @@ namespace MyTestVueApp.Server.Controllers
 
                 if (point == null)
                 {
-                    throw new ArgumentException("Point with id: " + id + " can not be found");
+                    return NotFound("Point with id: " + id + " can not be found");
                 }
 
                 return Ok(point);
@@ -128,7 +128,7 @@ namespace MyTestVueApp.Server.Controllers
 
                 if (space == null)
                 {
-                    throw new ArgumentException("Artspace with id: " + id + " can not be found");
+                    return NotFound("Artspace with id: " + id + " can not be found");
                 }
 
                 return Ok(space);

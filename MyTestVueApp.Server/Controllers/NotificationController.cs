@@ -55,7 +55,7 @@ namespace MyTestVueApp.Server.Controllers
             try
             {
                 bool success = await notificationService.MarkLike(likeModel.ArtId, likeModel.ArtistId);
-                return success ? Ok() : StatusCode(500, "Failed to mark like viewed");
+                return success ? Ok() : NotFound("Like notification was not found");
             }
             catch (Exception ex)
             {
@@ -70,7 +70,7 @@ namespace MyTestVueApp.Server.Controllers
             try
             {
                 bool success = await notificationService.MarkDislike(dislikeModel.ArtId, dislikeModel.ArtistId);
-                return success ? Ok() : StatusCode(500, "Failed to mark dislike viewed");
+                return success ? Ok() : NotFound("Dislike notification was not found");
             }
             catch (Exception ex)
             {

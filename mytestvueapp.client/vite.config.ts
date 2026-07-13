@@ -42,7 +42,7 @@ const target = env.ASPNETCORE_HTTPS_PORT
   ? `http://localhost:${env.ASPNETCORE_HTTPS_PORT}`
   : env.ASPNETCORE_URLS
   ? env.ASPNETCORE_URLS.split(";")[0]
-  : "http://0.0.0.0:7154";
+  : "http://localhost:5054";
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -54,6 +54,14 @@ export default defineConfig({
   },
   server: {
     proxy: {
+      "^/api": {
+        target,
+        secure: false
+      },
+      "^/healthz": {
+        target,
+        secure: false
+      },
       "^/artaccess": {
         target,
         secure: false
@@ -103,12 +111,16 @@ export default defineConfig({
         secure: false,
       },
       "^/friends": {
-        target: "http://localhost:5054", // your backend dev API
+        target,
         secure: false
+      },
+      "^/signalHub": {
+        target,
+        secure: false,
+        ws: true
       }
     },
     host: '0.0.0.0',
     port: 5173,
-    allowedHosts: ['pixelpainter.app'],
   }
 });

@@ -19,7 +19,15 @@ export default class LoginService {
 
   public static async isLoggedIn(): Promise<boolean> {
     try {
-      const session = await LoginService.getCurrentSession();
+      const response = await LoginService.fetchWithRetry("/api/v2/auth/me");
+      if (response.status === 401) {
+        return false;
+      }
+      if (!response.ok) {
+        throw new Error(`Error checking login status (${response.status})`);
+      }
+
+      const session = (await response.json()) as AuthSession;
       return session.isAuthenticated;
     } catch (error) {
       console.error("Error checking login status:", error);
@@ -93,7 +101,15 @@ export default class LoginService {
 
   public static async getIsAdmin(): Promise<boolean> {
     try {
-      const session = await LoginService.getCurrentSession();
+      const response = await LoginService.fetchWithRetry("/api/v2/auth/me");
+      if (response.status === 401) {
+        return false;
+      }
+      if (!response.ok) {
+        throw new Error(`Error checking admin status (${response.status})`);
+      }
+
+      const session = (await response.json()) as AuthSession;
       return !!session.user?.isAdmin;
     } catch (error) {
       console.error(error);

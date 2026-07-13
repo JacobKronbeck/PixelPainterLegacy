@@ -48,41 +48,32 @@ Docker Compose 5.x
 	npm install --legacy-peer-deps
 	```
 
-### Database Setup in Visual Studio
-1. Open the .sln file in the root directory of the project in Visual Studio
-1. CD to return to the root directory and run the following commands:
+### Database setup
+
+1. From the repository root, start the PostgreSQL/PostGIS development database:
 	```
-	docker-compose up -d
+	docker compose up -d
 	```
-	*This will run the database in a docker container and create the schema defined in the init.sql file*
-1. Open Microsoft SQL Server Management Studio and connect to the database using the following credentials:
+	The container initializes itself from the ordered SQL files in `supabase/migrations` the first time its volume is created.
+1. To inspect the database, connect with any PostgreSQL client using:
 	```
-	Server: localhost,1433
-	Login: sa
-	Password: PASSWORD_HERE
-	Encryption: Optional
-	Trust Server Certificate: Yes
+	Host: localhost
+	Port: 5432
+	Database: postgres
+	Username: postgres
+	Password: postgres
 	```
-	*Use the same password as defined in your docker-compose.yml file*
 
 ### Backend setup in Visual Studio
 
 1. Open the .sln file in the root directory of the project in Visual Studio
-1. Create `MyTestVueApp.Server/appsettings.json` with the following structure:
+1. Local database and frontend redirect defaults are provided by `MyTestVueApp.Server/appsettings.Development.json`. To enable Google login locally, create the ignored `MyTestVueApp.Server/appsettings.json` with the following overrides:
 	```json
 	{
-	  "Logging": {
-	    "LogLevel": {
-	      "Default": "Information",
-	      "Microsoft.AspNetCore": "Warning"
-	    }
-	  },
-	  "AllowedHosts": "*",
 	  "ApplicationConfiguration": {
-	    "ConnectionString": "Server=localhost,1433;Database=PixelPainter;User Id=sa;Password=LocalPassword123;TrustServerCertificate=True;Encrypt=False;",
 	    "ClientId": "",
 	    "ClientSecret": "",
-	    "RedirectUrl": "http://localhost:5173/"
+	    "OAuthRedirectUrl": "http://localhost:5054/api/v2/auth/callback"
 	  }
 	}
 	```
