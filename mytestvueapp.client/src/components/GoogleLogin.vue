@@ -15,18 +15,22 @@ import Artist from "@/entities/Artist";
 import { apiUrl } from "@/services/apiClient";
 
 const isLoggedIn = ref<boolean>(false);
+const currentUser = ref<Artist | null>(null);
 
 onMounted(async () => {
-  LoginService.isLoggedIn().then((result) => {
-    isLoggedIn.value = result;
-  });
+  try {
+    currentUser.value = await LoginService.getCurrentUser();
+    isLoggedIn.value = true;
+  } catch {
+    currentUser.value = null;
+    isLoggedIn.value = false;
+  }
 });
 
-function buttonClick(): void {
+async function buttonClick(): Promise<void> {
   if (isLoggedIn.value) {
-    LoginService.getCurrentUser().then((user: Artist) => {
-      router.push(`/accountpage/${encodeURIComponent(user.name)}#created_art`);
-    });
+    const user = currentUser.value ?? await LoginService.getCurrentUser();
+    await router.push(`/accountpage/${encodeURIComponent(user.name)}#created_art`);
   } else {
     login();
   }

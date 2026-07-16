@@ -6,12 +6,12 @@ namespace MyTestVueApp.Server.Auth
 {
     public class CurrentUserAccessor : ICurrentUserAccessor
     {
-        private readonly ILoginService _loginService;
+        private readonly IV2AccountService _accountService;
         private readonly IWebHostEnvironment _environment;
 
-        public CurrentUserAccessor(ILoginService loginService, IWebHostEnvironment environment)
+        public CurrentUserAccessor(IV2AccountService accountService, IWebHostEnvironment environment)
         {
-            _loginService = loginService;
+            _accountService = accountService;
             _environment = environment;
         }
 
@@ -31,7 +31,23 @@ namespace MyTestVueApp.Server.Auth
                 return null;
             }
 
-            return await _loginService.GetUserBySubId(subId);
+            var account = await _accountService.GetBySubIdAsync(subId);
+            if (account == null)
+            {
+                return null;
+            }
+
+            return new Artist
+            {
+                Id = account.Id,
+                SubId = subId,
+                Name = account.Name,
+                IsAdmin = account.IsAdmin,
+                PrivateProfile = account.PrivateProfile,
+                CreationDate = account.CreationDate,
+                Email = account.Email,
+                NotificationsEnabled = account.NotificationsEnabled
+            };
         }
 
         private static bool IsLocalHost(string host)

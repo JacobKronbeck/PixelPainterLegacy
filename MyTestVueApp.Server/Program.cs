@@ -8,6 +8,7 @@ using MyTestVueApp.Server.Auth;
 using Microsoft.OpenApi.Models;
 using System.Reflection;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.DataProtection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -44,6 +45,15 @@ builder.Services
             && !string.IsNullOrWhiteSpace(config.OAuthRedirectUrl)),
         "Production requires Google OAuth credentials and redirect URLs.")
     .ValidateOnStart();
+
+// Local development must not depend on a Windows user-profile key ring. Those
+// keys can be unreadable when the app is launched by Swagger, an IDE, or a
+// sandbox under different Windows identities. Production keeps the normal
+// persistent Data Protection provider.
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.AddDataProtection().UseEphemeralDataProtectionProvider();
+}
 
 builder.Services
     .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)

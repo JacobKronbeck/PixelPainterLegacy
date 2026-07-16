@@ -390,12 +390,10 @@ namespace MyTestVueApp.Server.ServiceImplementations
         /// <returns>An artist object</returns>
         public async Task<Artist> GetUserBySubId(string subId)
         {
-            var artist = new Artist();
-
             var connectionString = AppConfig.Value.ConnectionString;
             using (SqlConnection connection = new SqlConnection(connectionString))
             {
-                connection.Open();
+                await connection.OpenAsync();
 
                 var query = @"
                     SELECT Id
@@ -416,20 +414,19 @@ namespace MyTestVueApp.Server.ServiceImplementations
 
                     using (var reader = await command.ExecuteReaderAsync())
                     {
-                        while (reader.Read())
+                        if (await reader.ReadAsync())
                         {
-                            artist = new Artist
+                            return new Artist
                             {
                                 Id = reader.GetInt32(0),
-                                SubId = reader.GetString(1),
-                                Name = reader.GetString(2),
-                                IsAdmin = reader.GetBoolean(3),
-                                CreationDate = reader.GetDateTime(4),
-                                PrivateProfile = reader.GetBoolean(5),
+                                SubId = reader.IsDBNull(1) ? string.Empty : reader.GetString(1),
+                                Name = reader.IsDBNull(2) ? string.Empty : reader.GetString(2),
+                                IsAdmin = !reader.IsDBNull(3) && reader.GetBoolean(3),
+                                CreationDate = reader.IsDBNull(4) ? DateTime.UtcNow : reader.GetDateTime(4),
+                                PrivateProfile = !reader.IsDBNull(5) && reader.GetBoolean(5),
                                 Email = reader.IsDBNull(6) ? string.Empty : reader.GetString(6),
                                 NotificationsEnabled = reader.IsDBNull(7) ? 63 : reader.GetInt32(7)
                             };
-                            return artist;
                         }
                     }
                 }
