@@ -290,7 +290,18 @@ async function loadArtistData(artistName: string): Promise<void> {
   likedArt.value = [];
 
   try {
-    const artistInfo = await LoginService.GetArtistByName(artistName);
+    const normalizedRouteName = artistName.trim().toLocaleLowerCase();
+    const normalizedCurrentName = curUser.value.name?.trim().toLocaleLowerCase();
+    const isCurrentUsersRoute = curUser.value.id > 0
+      && !!normalizedCurrentName
+      && normalizedRouteName === normalizedCurrentName;
+
+    // The authenticated session is authoritative for the current user's own
+    // page. Do not hide account controls because a second by-name lookup races
+    // a rename or temporarily fails.
+    const artistInfo = isCurrentUsersRoute
+      ? Object.assign(new Artist(), curUser.value)
+      : await LoginService.GetArtistByName(artistName);
     console.log(artistInfo);
     curArtist.value = artistInfo;
     newUsername.value = artistInfo.name ?? "";
