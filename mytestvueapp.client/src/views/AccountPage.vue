@@ -4,7 +4,9 @@
       <Card class="h-fit profile-card">
         <template #content>
           <Avatar icon="pi pi-user" class="mr-2" size="xlarge" shape="circle" />
-          <div class="text-3xl p-font-bold">{{ curArtist.name }}</div>
+          <div class="text-3xl p-font-bold">
+            {{ curArtist.name || (isArtistLoading ? "Loading artist…" : "Artist unavailable") }}
+          </div>
 
           <div class="flex mt-4 p-2 gap-2 flex-column">
             <Button
@@ -188,7 +190,11 @@
 
       <!-- Creator's Art -->
       <div v-if="route.hash == '#created_art'">
-        <h2>{{ createdArtHeading }}</h2>
+        <h2 v-if="curArtist.id > 0">{{ createdArtHeading }}</h2>
+        <p v-else-if="isArtistLoading">Loading artist…</p>
+        <Message v-else severity="error" :closable="false">
+          We couldn't load this artist. Please refresh and try again.
+        </Message>
         <!-- use art-grid so desktop = rows/columns, mobile = feed -->
         <div class="art-grid">
           <ArtCard
@@ -249,6 +255,7 @@ const isAdmin = ref<boolean>(false);
 const curArtist = ref<Artist>(new Artist());
 const curUser = ref<Artist>(new Artist());
 const pageStatus = ref<string>("");
+const isArtistLoading = ref<boolean>(true);
 
 const isEditing = ref<boolean>(false);
 const newUsername = ref<string>("");
@@ -286,6 +293,7 @@ function normalizeTags(a: any) {
 async function loadArtistData(artistName: string): Promise<void> {
   if (!artistName) return;
 
+  isArtistLoading.value = true;
   myArt.value = [];
   likedArt.value = [];
 
@@ -305,6 +313,7 @@ async function loadArtistData(artistName: string): Promise<void> {
     console.log(artistInfo);
     curArtist.value = artistInfo;
     newUsername.value = artistInfo.name ?? "";
+    isArtistLoading.value = false;
 
     pageStatus.value = artistInfo.privateProfile ? "Private" : "Public";
 
@@ -367,6 +376,8 @@ async function loadArtistData(artistName: string): Promise<void> {
 
     curArtist.value = new Artist();
     newUsername.value = "";
+    isArtistLoading.value = false;
+    console.error("Failed to load artist data:", e);
     toast.add({
       severity: "error",
       summary: "Error",
@@ -383,17 +394,37 @@ onMounted(async () => {
   if (!["#settings", "#notification_settings", "#created_art", "#liked_art"].includes(route.hash)) {
     changeHash("#created_art");
   }
-  try {
-    const user = await LoginService.getCurrentUser();
-    if (user && user.id !== 0) {
-      curUser.value = user;
-      isAdmin.value = !!(user as any).isAdmin;
-      updateNotifications(user);
+  const currentUserRequest = (async () => {
+    try {
+      const user = await LoginService.getCurrentUser();
+      if (user && user.id !== 0) {
+        curUser.value = user;
+        isAdmin.value = !!(user as any).isAdmin;
+        updateNotifications(user);
+      }
+    } catch {
+      // The public profile can still load when the session is unavailable.
     }
-  } catch {
-    // user is anonymous
+  })();
+
+  // Do not block the public profile behind session restoration. In production,
+  // /auth/me can be delayed by a cold backend or reject a cookie from an older
+  // deployment; neither case should leave the whole account page empty.
+  const artistRequest = loadArtistData(String(route.params.artist ?? ""));
+  await Promise.allSettled([currentUserRequest, artistRequest]);
+
+  // Preserve recovery for an old own-profile URL after a username change.
+  if (
+    curArtist.value.id === 0
+    && curUser.value.id > 0
+    && ["#settings", "#notification_settings"].includes(route.hash)
+  ) {
+    await router.replace({
+      name: "AccountPage",
+      params: { artist: curUser.value.name },
+      hash: route.hash
+    });
   }
-  await loadArtistData(String(route.params.artist ?? ""));
 
 });
 
