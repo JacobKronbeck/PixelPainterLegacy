@@ -290,6 +290,46 @@ function normalizeTags(a: any) {
   return Array.isArray(tags) ? tags : [];
 }
 
+function normalizeArt(a: any): Art {
+  return {
+    ...a,
+    tags: normalizeTags(a),
+    artistName: a?.artistName ?? [],
+    title: a?.title ?? "",
+    numComments: a?.numComments ?? 0,
+    numLikes: a?.numLikes ?? 0,
+    numDislikes: a?.numDislikes ?? 0,
+  } as Art;
+}
+
+async function loadArtForTab(artistId: number, hash = route.hash): Promise<void> {
+  if (hash === "#created_art") {
+    try {
+      myArt.value = (await ArtAccessService.getAllArtByUserID(artistId) ?? []).map(normalizeArt);
+    } catch {
+      myArt.value = [];
+      toast.add({
+        severity: "warn",
+        summary: "Art",
+        detail: "Failed to load creator's art.",
+        life: 2500,
+      });
+    }
+  } else if (hash === "#liked_art") {
+    try {
+      likedArt.value = (await ArtAccessService.getLikedArt(artistId) ?? []).map(normalizeArt);
+    } catch {
+      likedArt.value = [];
+      toast.add({
+        severity: "warn",
+        summary: "Art",
+        detail: "Failed to load liked art.",
+        life: 2500,
+      });
+    }
+  }
+}
+
 async function loadArtistData(artistName: string): Promise<void> {
   if (!artistName) return;
 
@@ -316,44 +356,7 @@ async function loadArtistData(artistName: string): Promise<void> {
     isArtistLoading.value = false;
 
     pageStatus.value = artistInfo.privateProfile ? "Private" : "Public";
-
-    const [createdRes, likedRes] = await Promise.allSettled([
-      ArtAccessService.getAllArtByUserID(artistInfo.id),
-      ArtAccessService.getLikedArt(artistInfo.id),
-    ]);
-
-    if (createdRes.status === "fulfilled") {
-      myArt.value = (createdRes.value ?? []).map((a: any) => ({
-        ...a,
-        tags: normalizeTags(a),
-        artistName: a?.artistName ?? [],
-        title: a?.title ?? "",
-        numComments: a?.numComments ?? 0,
-        numLikes: a?.numLikes ?? 0,
-        numDislikes: a?.numDislikes ?? 0,
-      }));
-    } else {
-      toast.add({
-        severity: "warn",
-        summary: "Art",
-        detail: "Failed to load creator's art.",
-        life: 2500,
-      });
-    }
-
-    if (likedRes.status === "fulfilled") {
-      likedArt.value = (likedRes.value ?? []).map((a: any) => ({
-        ...a,
-        tags: normalizeTags(a),
-        artistName: a?.artistName ?? [],
-        title: a?.title ?? "",
-        numComments: a?.numComments ?? 0,
-        numLikes: a?.numLikes ?? 0,
-        numDislikes: a?.numDislikes ?? 0,
-      }));
-    } else {
-      likedArt.value = [];
-    }
+    await loadArtForTab(artistInfo.id);
   } catch (e) {
     const currentUsername = curUser.value.name?.trim();
     const isAccountSettingsRoute = ["#settings", "#notification_settings"].includes(route.hash);
@@ -437,6 +440,16 @@ watch(
   }
 );
 
+watch(
+  () => route.hash,
+  async (newHash, oldHash) => {
+    if (newHash === oldHash || curArtist.value.id <= 0) {
+      return;
+    }
+    await loadArtForTab(curArtist.value.id, newHash);
+  }
+);
+
 function changeHash(hash: string): void {
   if (hash === "#settings" && !canEdit.value) {
     toast.add({
@@ -447,7 +460,7 @@ function changeHash(hash: string): void {
     });
     return;
   }
-  window.location.hash = hash;
+  void router.push({ hash });
 }
 
 function cancelEdit(): void {

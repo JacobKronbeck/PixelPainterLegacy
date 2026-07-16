@@ -15,9 +15,24 @@ export function apiUrl(path: string): string {
   return `${apiBaseUrl}${normalizedPath}`;
 }
 
-export function apiFetch(path: string, init: RequestInit = {}): Promise<Response> {
-  return fetch(apiUrl(path), {
+const retryableStatuses = new Set([500, 502, 503, 504]);
+
+export async function apiFetch(path: string, init: RequestInit = {}): Promise<Response> {
+  const method = (init.method ?? "GET").toUpperCase();
+  const canRetry = method === "GET" || method === "HEAD";
+  const request = () => fetch(apiUrl(path), {
     credentials: "include",
     ...init
   });
+
+  const response = await request();
+  if (!canRetry || !retryableStatuses.has(response.status)) {
+    return response;
+  }
+
+  // Render performs rolling deploys for this monorepo. A read can briefly hit
+  // an instance whose database connection is not ready while the next request
+  // succeeds. Retry only idempotent reads; never replay a mutation here.
+  await new Promise((resolve) => window.setTimeout(resolve, 350));
+  return request();
 }

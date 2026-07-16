@@ -6,7 +6,7 @@ export default class NotificationService {
   const allNotifications: Notification[] = [];
   try {
     const response = await apiFetch(
-      `/notification/GetNotificationsForArtist?artistId=${artistId}`
+      `/notification/GetNotificationsForArtist?userId=${artistId}`
     );
 
     if (!response.ok) {

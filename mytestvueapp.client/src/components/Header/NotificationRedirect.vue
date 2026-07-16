@@ -31,17 +31,20 @@ const notificationsCount = computed(() => {
 });
 
 onMounted(async () => {
-  if (notificationStore.notifications.length === 0) {
-    LoginService.getCurrentUser().then((user) => {
-      NotificationService.getNotifications(user.id).then((data) => {
-        notificationStore.notifications = data;
-      });
-    });
+  if (notificationStore.notifications.length !== 0) {
+    return;
+  }
+
+  try {
+    const user = await LoginService.getCurrentUser();
+    notificationStore.notifications = await NotificationService.getNotifications(user.id);
+  } catch {
+    // Anonymous users and sessions interrupted by a deployment have no badge.
   }
 });
 
 function buttonClick(): void {
-  router.push("/notification");
+  router.push("/notifications");
 }
 </script>
 <style scoped>

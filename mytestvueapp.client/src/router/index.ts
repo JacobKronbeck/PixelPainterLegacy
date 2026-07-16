@@ -89,6 +89,31 @@ const router = createRouter({
     }
   ]
 });
+
+const staleChunkReloadKey = "pixel-painter:stale-chunk-reload";
+const dynamicImportError = /dynamically imported module|module script|failed to fetch/i;
+
+router.onError((error, to) => {
+  if (!dynamicImportError.test(String(error))) {
+    return;
+  }
+
+  const destination = to.fullPath || window.location.pathname + window.location.search + window.location.hash;
+  if (sessionStorage.getItem(staleChunkReloadKey) === destination) {
+    return;
+  }
+
+  // An open tab can retain an old Vite entry chunk after Vercel deploys a new
+  // build. Reload once so the browser receives the new index and chunk names.
+  sessionStorage.setItem(staleChunkReloadKey, destination);
+  window.location.assign(destination);
+});
+
+router.afterEach((_to, _from, failure) => {
+  if (!failure) {
+    sessionStorage.removeItem(staleChunkReloadKey);
+  }
+});
 export default router;
 
 // Simple admin guard: routes with meta.requiresAdmin require admin

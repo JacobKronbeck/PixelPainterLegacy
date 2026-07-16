@@ -7,19 +7,9 @@ export interface AuthSession {
 }
 
 export default class LoginService {
-  private static async fetchWithRetry(path: string, init?: RequestInit): Promise<Response> {
-    const response = await apiFetch(path, init);
-    if (response.status < 500) {
-      return response;
-    }
-
-    await new Promise((resolve) => window.setTimeout(resolve, 500));
-    return apiFetch(path, init);
-  }
-
   public static async isLoggedIn(): Promise<boolean> {
     try {
-      const response = await LoginService.fetchWithRetry("/api/v2/auth/me");
+      const response = await apiFetch("/api/v2/auth/me");
       if (response.status === 401) {
         return false;
       }
@@ -86,7 +76,7 @@ export default class LoginService {
 
   public static async getCurrentSession(): Promise<AuthSession> {
     try {
-      const response = await LoginService.fetchWithRetry("/api/v2/auth/me");
+      const response = await apiFetch("/api/v2/auth/me");
 
       if (!response.ok) {
         throw new Error("Error retrieving user");
@@ -101,7 +91,7 @@ export default class LoginService {
 
   public static async getIsAdmin(): Promise<boolean> {
     try {
-      const response = await LoginService.fetchWithRetry("/api/v2/auth/me");
+      const response = await apiFetch("/api/v2/auth/me");
       if (response.status === 401) {
         return false;
       }

@@ -13,6 +13,20 @@ Use a Render Docker Web Service for the production API.
 - Suggested service name: `pixel-painter-legacy-api`
 - Start command: leave blank; the Dockerfile entrypoint binds ASP.NET Core to Render's `PORT`
 
+### Prevent frontend-only API restarts
+
+The frontend and API share this repository, but a Vue-only commit must not
+restart the Render API. In the Render service dashboard, open **Settings →
+Build & Deploy → Build Filters** and add this included path:
+
+```text
+MyTestVueApp.Server/**
+```
+
+Without this filter, every frontend fix restarts the API. A restart can cause
+brief database errors during the rollout and invalidates existing login cookies
+until data-protection keys are persisted.
+
 Render is a good fit here because its Hobby workspace includes web services, Docker builds, Git-based deploys, HTTPS, custom domains, environment variables, and WebSockets for SignalR. Keep the API on Free compute first; upgrade only if cold starts, memory, CPU, or bandwidth become a real problem.
 
 ## Hobby Scope
