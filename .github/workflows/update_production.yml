@@ -32,8 +32,14 @@ jobs:
         with:
           dotnet-version: "8.0.x"
 
-      - name: Restore API
-        run: dotnet restore MyTestVueApp.Server/MyTestVueApp.Server.csproj
+      - name: Restore API tests
+        run: dotnet restore MyTestVueApp.Server.Tests/MyTestVueApp.Server.Tests.csproj
 
-      - name: Build API
-        run: dotnet build MyTestVueApp.Server/MyTestVueApp.Server.csproj --configuration Release --no-restore
+      - name: Build API and tests
+        run: dotnet build MyTestVueApp.Server.Tests/MyTestVueApp.Server.Tests.csproj --configuration Release --no-restore
+
+      - name: Run API integration tests
+        run: dotnet test MyTestVueApp.Server.Tests/MyTestVueApp.Server.Tests.csproj --configuration Release --no-build --verbosity normal
+
+      - name: Build production API container
+        run: docker build --file MyTestVueApp.Server/Dockerfile .

@@ -1,17 +1,13 @@
-using Google.Apis.Auth.OAuth2;
-using Google.Apis.Oauth2.v2.Data;
-using Google.Apis.Oauth2.v2;
-using Google.Apis.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
-using MyTestVueApp.Server.Configuration;
 using MyTestVueApp.Server.Interfaces;
 using Microsoft.Extensions.Logging;
 using MyTestVueApp.Server.ServiceImplementations;
 using MyTestVueApp.Server.Entities;
 using System.Security.Authentication;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
-using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using MyTestVueApp.Server.Auth;
 
 namespace MyTestVueApp.Server.Controllers
 {
@@ -19,13 +15,11 @@ namespace MyTestVueApp.Server.Controllers
     [Route("[controller]")]
     public class LoginController : ControllerBase
     {
-        private readonly IOptions<ApplicationConfiguration> AppConfig;
         private readonly ILogger<ArtAccessController> Logger;
         private readonly ILoginService LoginService;
 
-        public LoginController(IOptions<ApplicationConfiguration> appConfig, ILogger<ArtAccessController> logger, ILoginService loginService)
+        public LoginController(ILogger<ArtAccessController> logger, ILoginService loginService)
         {
-            AppConfig = appConfig;
             Logger = logger;
             LoginService = loginService;
         }
@@ -34,57 +28,24 @@ namespace MyTestVueApp.Server.Controllers
         [Route("Login")]
         public IActionResult Login()
         {
-            var returnUrl = GetOAuthRedirectUri();
-            var url = QueryHelpers.AddQueryString("https://accounts.google.com/o/oauth2/v2/auth",
-                new Dictionary<string, string?>
-                {
-                    ["client_id"] = AppConfig.Value.ClientId,
-                    ["redirect_uri"] = returnUrl,
-                    ["scope"] = "email profile",
-                    ["response_type"] = "code",
-                    ["prompt"] = "consent"
-                });
-
-            return Redirect(url);
+            return Redirect("/api/v2/auth/login");
         }
 
         [HttpGet]
         [Route("LoginRedirect")]
-        public async Task<IActionResult> RedirectLogin(string code, string scope, string authuser, string prompt)
+        public IActionResult RedirectLogin(string code, string scope, string authuser, string prompt)
         {
-            try
-            {
-                var userInfo = await LoginService.GetUserId(code, GetOAuthRedirectUri());
-
-                // Add Id to cookies
-                Response.Cookies.Append("GoogleOAuth", userInfo.Id, new CookieOptions
-                {
-                    HttpOnly = true,
-                    Secure = true,
-                    SameSite = SameSiteMode.None,
-                    Expires = DateTimeOffset.UtcNow.AddDays(14)
-                });
-
-                await LoginService.SignupActions(userInfo.Id, userInfo.Email);
-
-                return Redirect(GetPostLoginRedirectUri());
-            }
-            catch (Google.Apis.Auth.OAuth2.Responses.TokenResponseException ex)
-            {
-                Logger.LogWarning(ex, "OAuth provider rejected the legacy callback code");
-                return BadRequest("OAuth code was rejected.");
-            }
+            return StatusCode(
+                StatusCodes.Status410Gone,
+                "The legacy OAuth callback is retired. Start login at /api/v2/auth/login.");
         }
 
-        [HttpGet]
+        [HttpPost]
         [Route("Logout")]
-        public IActionResult Logout()
+        public async Task<IActionResult> Logout()
         {
-            Response.Cookies.Delete("GoogleOAuth", new CookieOptions
-            {
-                Secure = true,
-                SameSite = SameSiteMode.None
-            });
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            Response.Cookies.Delete(AuthCookieOptions.LegacyCookieName);
             return Ok();
         }
 
@@ -99,7 +60,7 @@ namespace MyTestVueApp.Server.Controllers
         {
             try
             {
-                if (Request.Cookies.TryGetValue("GoogleOAuth", out var userId))
+                if (HttpContext.TryGetCurrentUserSubId(out var userId))
                 {
                     var artist = await LoginService.GetUserBySubId(userId);
                     return Ok(artist != null);
@@ -143,7 +104,7 @@ namespace MyTestVueApp.Server.Controllers
         {
             try
             {
-                if (Request.Cookies.TryGetValue("GoogleOAuth", out var userId))
+                if (HttpContext.TryGetCurrentUserSubId(out var userId))
                 {
                     var artist = await LoginService.GetUserBySubId(userId);
                     if (artist == null) {
@@ -179,7 +140,7 @@ namespace MyTestVueApp.Server.Controllers
 
             try
             {
-                if (Request.Cookies.TryGetValue("GoogleOAuth", out var userId))
+                if (HttpContext.TryGetCurrentUserSubId(out var userId))
                 {
                     var artist = await LoginService.GetUserBySubId(userId);
                     if (artist.IsAdmin || artist.Id == artistId)
@@ -236,7 +197,7 @@ namespace MyTestVueApp.Server.Controllers
             try
             {
                 // If the user is logged in
-                if (Request.Cookies.TryGetValue("GoogleOAuth", out var userId))
+                if (HttpContext.TryGetCurrentUserSubId(out var userId))
                 {
                     var artist = await LoginService.GetUserBySubId(userId);
                     if(artist == null) { return Ok(false); }
@@ -274,7 +235,7 @@ namespace MyTestVueApp.Server.Controllers
         {
             try
             {
-                if (Request.Cookies.TryGetValue("GoogleOAuth", out var subId))
+                if (HttpContext.TryGetCurrentUserSubId(out var subId))
                 {
                     var success = await LoginService.UpdateUsername(newUsername, subId);
                     return Ok(success);
@@ -304,18 +265,19 @@ namespace MyTestVueApp.Server.Controllers
             try
             {
                 // If the user is logged in
-                if (Request.Cookies.TryGetValue("GoogleOAuth", out var userId))
+                if (HttpContext.TryGetCurrentUserSubId(out var userId))
                 {
                     var artist = await LoginService.GetUserBySubId(userId);
                     if(artist.Id == id)
                     {
                         LoginService.DeleteArtist(artist.Id);
-                        Response.Cookies.Delete("GoogleOAuth");
+                        await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                        Response.Cookies.Delete(AuthCookieOptions.LegacyCookieName);
                         return Ok();
                     }
                     else if (artist.IsAdmin)
                     {
-                        LoginService.DeleteArtist(artist.Id);
+                        LoginService.DeleteArtist(id);
                         return Ok();
                     }
                     else {
@@ -352,7 +314,7 @@ namespace MyTestVueApp.Server.Controllers
             try
             {
                 // Authenticate current user via cookie
-                if (!Request.Cookies.TryGetValue("GoogleOAuth", out var subId))
+                if (!HttpContext.TryGetCurrentUserSubId(out var subId))
                     throw new AuthenticationException("User is not logged in!");
 
                 var currentUser = await LoginService.GetUserBySubId(subId);
@@ -378,33 +340,5 @@ namespace MyTestVueApp.Server.Controllers
             }
         }
 
-        private string GetOAuthRedirectUri()
-        {
-            if (!string.IsNullOrWhiteSpace(AppConfig.Value.OAuthRedirectUrl))
-            {
-                return AppConfig.Value.OAuthRedirectUrl.Trim();
-            }
-
-            var scheme = (Request.Headers["X-Forwarded-Proto"].FirstOrDefault() ?? Request.Scheme).Split(',')[0].Trim();
-            var host = (Request.Headers["X-Forwarded-Host"].FirstOrDefault() ?? Request.Host.Value).Split(',')[0].Trim();
-
-            if (!host.StartsWith("localhost", StringComparison.OrdinalIgnoreCase)
-                && !host.StartsWith("127.0.0.1", StringComparison.OrdinalIgnoreCase))
-            {
-                scheme = "https";
-            }
-
-            return $"{scheme}://{host}/login/LoginRedirect";
-        }
-
-        private string GetPostLoginRedirectUri()
-        {
-            if (!string.IsNullOrWhiteSpace(AppConfig.Value.PostLoginRedirectUrl))
-            {
-                return AppConfig.Value.PostLoginRedirectUrl;
-            }
-
-            return AppConfig.Value.RedirectUrl;
-        }
     }
 }

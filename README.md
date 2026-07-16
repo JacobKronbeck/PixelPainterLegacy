@@ -88,6 +88,20 @@ Docker Compose 5.x
 	http://0.0.0.0:7154
 	```
 
+### Login locally through Swagger
+
+Google credentials are not required for local API testing. With the database and backend running:
+
+1. Open `http://localhost:5054/swagger`.
+1. The quickest option is `GET /api/v2/auth/login`: when local Google credentials are blank, it signs in as `swagger@example.com` and returns to Swagger.
+1. Expand `POST /api/v2/auth/local-login` and select **Try it out**.
+1. Use an email such as `swagger@example.com`, then select **Execute**.
+1. Confirm the response is `200` with `isAuthenticated: true`.
+1. Run `GET /api/v2/auth/me`; Swagger sends the login cookie automatically and returns the same account.
+1. Run `POST /api/v2/auth/logout` when finished.
+
+The local login route creates or reuses a real row in the local PostgreSQL database. It is restricted to the Development environment and localhost requests, so it is not a production login mechanism.
+
 ### Full local run sequence
 
 1. Start the database from the repository root:

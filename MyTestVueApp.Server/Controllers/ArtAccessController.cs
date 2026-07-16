@@ -85,7 +85,7 @@ namespace MyTestVueApp.Server.Controllers
                 var artistArt = await ArtAccessService.GetArtByArtistWithTags(id);
 
                 // If viewer is logged in, allow owner/admin to see private too
-                if (Request.Cookies.TryGetValue("GoogleOAuth", out var userSubId))
+                if (HttpContext.TryGetCurrentUserSubId(out var userSubId))
                 {
                     var viewer = await LoginService.GetUserBySubId(userSubId);
                     if (viewer != null && (viewer.Id == id || viewer.IsAdmin))
@@ -121,7 +121,7 @@ namespace MyTestVueApp.Server.Controllers
         {
             try
             {
-                if (Request.Cookies.TryGetValue("GoogleOAuth", out var userSubId))
+                if (HttpContext.TryGetCurrentUserSubId(out var userSubId))
                 {
                     var artist = await LoginService.GetUserBySubId(userSubId);
 
@@ -169,7 +169,7 @@ namespace MyTestVueApp.Server.Controllers
 
                 if (art.IsPublic)
                 {
-                    if (Request.Cookies.TryGetValue("GoogleOAuth", out var userId))
+                    if (HttpContext.TryGetCurrentUserSubId(out var userId))
                     {
                         var artist = await LoginService.GetUserBySubId(userId);
                         if (artist != null)
@@ -181,7 +181,7 @@ namespace MyTestVueApp.Server.Controllers
                 }
                 else
                 {
-                    if (Request.Cookies.TryGetValue("GoogleOAuth", out var userId))
+                    if (HttpContext.TryGetCurrentUserSubId(out var userId))
                     {
                         var artist = await LoginService.GetUserBySubId(userId);
                         art.CurrentUserIsOwner = art.ArtistId.Contains(artist.Id);
@@ -249,7 +249,7 @@ namespace MyTestVueApp.Server.Controllers
         {
             try
             {
-                if (Request.Cookies.TryGetValue("GoogleOAuth", out var userSubId))
+                if (HttpContext.TryGetCurrentUserSubId(out var userSubId))
                 {
                     var artist = await LoginService.GetUserBySubId(userSubId);
 
@@ -300,7 +300,7 @@ namespace MyTestVueApp.Server.Controllers
         {
             try
             {
-                if (Request.Cookies.TryGetValue("GoogleOAuth", out var userSubId))
+                if (HttpContext.TryGetCurrentUserSubId(out var userSubId))
                 {
                     var artist = await LoginService.GetUserBySubId(userSubId);
 
@@ -358,7 +358,7 @@ namespace MyTestVueApp.Server.Controllers
             try
             {
                 // If the user is logged in
-                if (Request.Cookies.TryGetValue("GoogleOAuth", out var userId))
+                if (HttpContext.TryGetCurrentUserSubId(out var userId))
                 {
                     var artist = await LoginService.GetUserBySubId(userId);
                     var art = await ArtAccessService.GetArtById(artId);
@@ -399,7 +399,7 @@ namespace MyTestVueApp.Server.Controllers
             try
             {
                 // If the user is logged in
-                if (Request.Cookies.TryGetValue("GoogleOAuth", out var userId))
+                if (HttpContext.TryGetCurrentUserSubId(out var userId))
                 {
                     var isAnArtist = false;
                     var artist = await LoginService.GetUserBySubId(userId);

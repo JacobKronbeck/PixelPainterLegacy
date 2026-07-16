@@ -1,6 +1,8 @@
 using System.Net;
 using System.Net.Http.Json;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Configuration;
 using MyTestVueApp.Server.Contracts.V2;
 using Npgsql;
@@ -27,6 +29,63 @@ namespace MyTestVueApp.Server.Tests
         }
 
         [Fact]
+        public async Task LocalLogin_CreatesSession_AndReusesAccount()
+        {
+            var client = _factory.CreateClient(new WebApplicationFactoryClientOptions
+            {
+                BaseAddress = new Uri("https://localhost")
+            });
+
+            var firstResponse = await client.PostAsJsonAsync(
+                "/api/v2/auth/local-login",
+                new LocalLoginRequest { Email = "swagger-login@example.com" });
+            firstResponse.EnsureSuccessStatusCode();
+            var firstSession = await firstResponse.Content.ReadFromJsonAsync<AuthSessionDto>();
+
+            var secondResponse = await client.PostAsJsonAsync(
+                "/api/v2/auth/local-login",
+                new LocalLoginRequest { Email = "SWAGGER-LOGIN@example.com" });
+            secondResponse.EnsureSuccessStatusCode();
+            var secondSession = await secondResponse.Content.ReadFromJsonAsync<AuthSessionDto>();
+
+            var me = await client.GetFromJsonAsync<AuthSessionDto>("/api/v2/auth/me");
+
+            Assert.NotNull(firstSession);
+            Assert.NotNull(secondSession);
+            Assert.NotNull(me);
+            Assert.True(me!.IsAuthenticated);
+            Assert.Equal("swagger-login@example.com", me.User.Email);
+            Assert.Equal(firstSession!.User.Id, secondSession!.User.Id);
+            Assert.Equal(firstSession.User.Id, me.User.Id);
+        }
+
+        [Fact]
+        public async Task LocalLogin_IsUnavailable_OutsideDevelopment()
+        {
+            using var productionFactory = _factory.WithWebHostBuilder(builder =>
+            {
+                builder.UseEnvironment("Production");
+                builder.ConfigureAppConfiguration((_, config) =>
+                {
+                    config.AddInMemoryCollection(new Dictionary<string, string?>
+                    {
+                        ["ApplicationConfiguration:OAuthRedirectUrl"] = "https://example.com/api/v2/auth/callback"
+                    });
+                });
+            });
+            var client = productionFactory.CreateClient(new WebApplicationFactoryClientOptions
+            {
+                BaseAddress = new Uri("http://localhost")
+            });
+
+            var response = await client.PostAsJsonAsync(
+                "/api/v2/auth/local-login",
+                new LocalLoginRequest { Email = "swagger-login@example.com" });
+
+            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        }
+
+        [Fact]
         public async Task Login_UsesConfiguredFrontendProxyCallback()
         {
             const string callbackUrl = "https://pixel-painter-legacy.vercel.app/api/v2/auth/callback";
@@ -48,7 +107,45 @@ namespace MyTestVueApp.Server.Tests
             var response = await client.GetAsync("/api/v2/auth/login");
 
             Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
-            Assert.Equal($"{callbackUrl}?code=fake-code", response.Headers.Location!.ToString());
+            Assert.Equal(callbackUrl, response.Headers.Location!.GetLeftPart(UriPartial.Path));
+            var query = QueryHelpers.ParseQuery(response.Headers.Location.Query);
+            Assert.Equal("fake-code", query["code"]);
+            Assert.False(string.IsNullOrWhiteSpace(query["state"]));
+            Assert.True(response.Headers.TryGetValues("Set-Cookie", out var cookies));
+            Assert.Contains(cookies, cookie => cookie.StartsWith("PixelPainterOAuthState=", StringComparison.Ordinal));
+        }
+
+        [Fact]
+        public async Task Login_UsesLocalSwaggerSession_WhenGoogleIsNotConfigured()
+        {
+            using var configuredFactory = _factory.WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureAppConfiguration((_, config) =>
+                {
+                    config.AddInMemoryCollection(new Dictionary<string, string?>
+                    {
+                        ["ApplicationConfiguration:ClientId"] = string.Empty,
+                        ["ApplicationConfiguration:ClientSecret"] = string.Empty
+                    });
+                });
+            });
+            var client = configuredFactory.CreateClient(new WebApplicationFactoryClientOptions
+            {
+                AllowAutoRedirect = false,
+                BaseAddress = new Uri("https://localhost")
+            });
+
+            var response = await client.GetAsync("/api/v2/auth/login");
+
+            Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+            Assert.Equal("/swagger/index.html", response.Headers.Location!.ToString());
+            Assert.True(response.Headers.TryGetValues("Set-Cookie", out var cookies));
+            Assert.Contains(cookies, cookie => cookie.StartsWith("PixelPainterAuth=", StringComparison.Ordinal));
+
+            var me = await client.GetFromJsonAsync<AuthSessionDto>("/api/v2/auth/me");
+            Assert.NotNull(me);
+            Assert.True(me!.IsAuthenticated);
+            Assert.Equal("swagger@example.com", me.User.Email);
         }
 
         [Fact]
@@ -60,13 +157,13 @@ namespace MyTestVueApp.Server.Tests
                 BaseAddress = new Uri("https://localhost")
             });
 
-            var response = await client.GetAsync("/api/v2/auth/callback?code=test-code");
+            var response = await CompleteOAuthLoginAsync(client);
 
             Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
             Assert.Contains("/accountpage/", response.Headers.Location!.ToString());
             Assert.EndsWith("#created_art", response.Headers.Location!.ToString());
             Assert.True(response.Headers.TryGetValues("Set-Cookie", out var cookies));
-            Assert.Contains(cookies, cookie => cookie.StartsWith("GoogleOAuth=", StringComparison.Ordinal));
+            Assert.Contains(cookies, cookie => cookie.StartsWith("PixelPainterAuth=", StringComparison.Ordinal));
 
             var me = await client.GetFromJsonAsync<AuthSessionDto>("/api/v2/auth/me");
             Assert.NotNull(me);
@@ -79,17 +176,88 @@ namespace MyTestVueApp.Server.Tests
         {
             var client = _factory.CreateClient(new WebApplicationFactoryClientOptions
             {
-                AllowAutoRedirect = false
+                AllowAutoRedirect = false,
+                BaseAddress = new Uri("https://localhost")
             });
 
-            await client.GetAsync("/api/v2/auth/callback?code=test-code");
-            await client.GetAsync("/api/v2/auth/callback?code=test-code");
+            await CompleteOAuthLoginAsync(client);
+            await CompleteOAuthLoginAsync(client);
 
             await using var connection = new NpgsqlConnection(_factory.ConnectionString);
             await connection.OpenAsync();
             await using var command = new NpgsqlCommand("SELECT COUNT(1)::int FROM artist WHERE subid = 'google-sub-123456789';", connection);
 
             Assert.Equal(1, (int)(await command.ExecuteScalarAsync())!);
+        }
+
+        [Fact]
+        public async Task Callback_RejectsMissingOrInvalidOAuthState()
+        {
+            var client = _factory.CreateClient(new WebApplicationFactoryClientOptions
+            {
+                AllowAutoRedirect = false,
+                BaseAddress = new Uri("https://localhost")
+            });
+
+            var missing = await client.GetAsync("/api/v2/auth/callback?code=test-code&state=missing");
+            Assert.Equal(HttpStatusCode.BadRequest, missing.StatusCode);
+
+            var login = await client.GetAsync("/api/v2/auth/login");
+            Assert.Equal(HttpStatusCode.Redirect, login.StatusCode);
+            var invalid = await client.GetAsync("/api/v2/auth/callback?code=test-code&state=wrong-state");
+            Assert.Equal(HttpStatusCode.BadRequest, invalid.StatusCode);
+        }
+
+        [Fact]
+        public async Task Production_RejectsForgedLegacySubjectCookie()
+        {
+            await SeedArtistAsync("forged-target-sub", "ForgedTarget", "target@example.com");
+            using var productionFactory = CreateProductionFactory();
+            var client = productionFactory.CreateClient(new WebApplicationFactoryClientOptions
+            {
+                BaseAddress = new Uri("https://localhost")
+            });
+            client.DefaultRequestHeaders.Add("Cookie", "GoogleOAuth=forged-target-sub");
+
+            var response = await client.GetAsync("/api/v2/auth/me");
+
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task NonLocalDevelopmentHost_RejectsLegacySubjectCookie()
+        {
+            await SeedArtistAsync("nonlocal-target-sub", "NonLocalTarget", "nonlocal@example.com");
+            var client = _factory.CreateClient(new WebApplicationFactoryClientOptions
+            {
+                BaseAddress = new Uri("https://example.com")
+            });
+            client.DefaultRequestHeaders.Add("Cookie", "GoogleOAuth=nonlocal-target-sub");
+
+            var response = await client.GetAsync("/api/v2/auth/me");
+
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task AuthenticatedMutation_RejectsUntrustedOrigin()
+        {
+            var client = _factory.CreateClient(new WebApplicationFactoryClientOptions
+            {
+                BaseAddress = new Uri("https://localhost")
+            });
+            var login = await client.PostAsJsonAsync(
+                "/api/v2/auth/local-login",
+                new LocalLoginRequest { Email = "csrf-test@example.com" });
+            login.EnsureSuccessStatusCode();
+
+            using var request = new HttpRequestMessage(HttpMethod.Post, "/api/v2/auth/logout");
+            request.Headers.Add("Origin", "https://attacker.example");
+            var response = await client.SendAsync(request);
+
+            Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+            var me = await client.GetAsync("/api/v2/auth/me");
+            Assert.Equal(HttpStatusCode.OK, me.StatusCode);
         }
 
         [Fact]
@@ -173,6 +341,30 @@ namespace MyTestVueApp.Server.Tests
             Assert.NotNull(created);
             Assert.Equal("Uploaded", created!.Title);
             Assert.Contains(ownerId, created.ArtistId);
+        }
+
+        private static async Task<HttpResponseMessage> CompleteOAuthLoginAsync(HttpClient client)
+        {
+            var login = await client.GetAsync("/api/v2/auth/login");
+            Assert.Equal(HttpStatusCode.Redirect, login.StatusCode);
+            Assert.NotNull(login.Headers.Location);
+
+            return await client.GetAsync(login.Headers.Location);
+        }
+
+        private WebApplicationFactory<Program> CreateProductionFactory()
+        {
+            return _factory.WithWebHostBuilder(builder =>
+            {
+                builder.UseEnvironment("Production");
+                builder.ConfigureAppConfiguration((_, config) =>
+                {
+                    config.AddInMemoryCollection(new Dictionary<string, string?>
+                    {
+                        ["ApplicationConfiguration:OAuthRedirectUrl"] = "https://example.com/api/v2/auth/callback"
+                    });
+                });
+            });
         }
 
         private async Task<int> SeedArtistAsync(string subId, string name, string email)

@@ -41,7 +41,7 @@ namespace MyTestVueApp.Server.Controllers
             {
                 var comments = await CommentAccessService.GetCommentsByArtId(artId);
 
-                if (Request.Cookies.TryGetValue("GoogleOAuth", out var userId))
+                if (HttpContext.TryGetCurrentUserSubId(out var userId))
                 {
                     var artist = await LoginService.GetUserBySubId(userId);
                     if (artist == null)
@@ -73,7 +73,7 @@ namespace MyTestVueApp.Server.Controllers
             try
             {
                 // If the user is logged in
-                if (Request.Cookies.TryGetValue("GoogleOAuth", out var userId))
+                if (HttpContext.TryGetCurrentUserSubId(out var userId))
                 {
                     var comment = await CommentAccessService.GetCommentByCommentId(altComment.Id);
                     var subid = await LoginService.GetUserBySubId(userId);
@@ -124,7 +124,7 @@ namespace MyTestVueApp.Server.Controllers
             try
             {
                 // If the user is logged in
-                if (Request.Cookies.TryGetValue("GoogleOAuth", out var userId))
+                if (HttpContext.TryGetCurrentUserSubId(out var userId))
                 {
                     var comment = await CommentAccessService.GetCommentByCommentId(commentId);
                     var artist = await LoginService.GetUserBySubId(userId);
@@ -179,7 +179,7 @@ namespace MyTestVueApp.Server.Controllers
         {
             try
             {
-                if (Request.Cookies.TryGetValue("GoogleOAuth", out var userId))
+                if (HttpContext.TryGetCurrentUserSubId(out var userId))
                 {
                     var artist = await LoginService.GetUserBySubId(userId);
                     if (artist != null)

@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using MyTestVueApp.Server.Entities;
 using MyTestVueApp.Server.Hubs;
@@ -47,7 +47,7 @@ namespace MyTestVueApp.Server.Controllers
         {
             try
             {
-                if (Request.Cookies.TryGetValue("GoogleOAuth", out var userSubId))
+                if (HttpContext.TryGetCurrentUserSubId(out var userSubId))
                 {
                     var gridArtist = LoginService.GetArtistById(0);
                     var artist = await LoginService.GetUserBySubId(userSubId);
@@ -93,7 +93,7 @@ namespace MyTestVueApp.Server.Controllers
         {
             try
             {
-                if (Request.Cookies.TryGetValue("GoogleOAuth", out var userSubId))
+                if (HttpContext.TryGetCurrentUserSubId(out var userSubId))
                 {
                     var artist = await LoginService.GetUserBySubId(userSubId);
 
@@ -134,7 +134,7 @@ namespace MyTestVueApp.Server.Controllers
         {
             try
             {
-                if (Request.Cookies.TryGetValue("GoogleOAuth", out var userSubId))
+                if (HttpContext.TryGetCurrentUserSubId(out var userSubId))
                 {
                     var artist = await LoginService.GetUserBySubId(userSubId);
 

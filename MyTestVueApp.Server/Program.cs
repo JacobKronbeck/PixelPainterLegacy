@@ -7,6 +7,7 @@ using MyTestVueApp.Server.Hubs;
 using MyTestVueApp.Server.Auth;
 using Microsoft.OpenApi.Models;
 using System.Reflection;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,7 +32,41 @@ builder.Services.AddSignalR(sig => {
   sig.MaximumReceiveMessageSize = 524288;
 });
 
-builder.Services.Configure<ApplicationConfiguration>(builder.Configuration.GetSection("ApplicationConfiguration"));
+builder.Services
+    .AddOptions<ApplicationConfiguration>()
+    .Bind(builder.Configuration.GetSection("ApplicationConfiguration"))
+    .Validate(config => !string.IsNullOrWhiteSpace(config.ConnectionString),
+        "ApplicationConfiguration:ConnectionString is required.")
+    .Validate(config => builder.Environment.IsDevelopment()
+        || (!string.IsNullOrWhiteSpace(config.ClientId)
+            && !string.IsNullOrWhiteSpace(config.ClientSecret)
+            && !string.IsNullOrWhiteSpace(config.RedirectUrl)
+            && !string.IsNullOrWhiteSpace(config.OAuthRedirectUrl)),
+        "Production requires Google OAuth credentials and redirect URLs.")
+    .ValidateOnStart();
+
+builder.Services
+    .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.Cookie.Name = AuthCookieOptions.CookieName;
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        options.Cookie.SameSite = SameSiteMode.Lax;
+        options.Cookie.IsEssential = true;
+        options.ExpireTimeSpan = TimeSpan.FromDays(14);
+        options.SlidingExpiration = true;
+        options.Events.OnRedirectToLogin = context =>
+        {
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            return Task.CompletedTask;
+        };
+        options.Events.OnRedirectToAccessDenied = context =>
+        {
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            return Task.CompletedTask;
+        };
+    });
 
 var frontendOrigins = new[]
 {
@@ -98,6 +133,37 @@ if (app.Environment.IsDevelopment())
 // app.UseHttpsRedirection();
 
 app.UseCors("FrontendCors");
+
+app.UseAuthentication();
+
+app.Use(async (context, next) =>
+{
+    var method = context.Request.Method;
+    var isMutation = HttpMethods.IsPost(method)
+        || HttpMethods.IsPut(method)
+        || HttpMethods.IsPatch(method)
+        || HttpMethods.IsDelete(method);
+
+    if (isMutation && context.User.Identity?.IsAuthenticated == true)
+    {
+        var origin = context.Request.Headers.Origin.FirstOrDefault();
+        if (!string.IsNullOrWhiteSpace(origin))
+        {
+            var requestOrigin = $"{context.Request.Scheme}://{context.Request.Host}".TrimEnd('/');
+            var isAllowedOrigin = string.Equals(origin.TrimEnd('/'), requestOrigin, StringComparison.OrdinalIgnoreCase)
+                || frontendOrigins.Contains(origin.TrimEnd('/'), StringComparer.OrdinalIgnoreCase);
+
+            if (!isAllowedOrigin)
+            {
+                context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                await context.Response.WriteAsJsonAsync(new { error = "Cross-origin authenticated mutation rejected." });
+                return;
+            }
+        }
+    }
+
+    await next();
+});
 
 app.UseAuthorization();
 

@@ -18,7 +18,7 @@ namespace MyTestVueApp.Server.Auth
             _appConfig = appConfig;
         }
 
-        public string BuildAuthorizationUrl(string redirectUri)
+        public string BuildAuthorizationUrl(string redirectUri, string state)
         {
             return QueryHelpers.AddQueryString("https://accounts.google.com/o/oauth2/v2/auth",
                 new Dictionary<string, string?>
@@ -27,7 +27,8 @@ namespace MyTestVueApp.Server.Auth
                     ["redirect_uri"] = redirectUri,
                     ["scope"] = "email profile",
                     ["response_type"] = "code",
-                    ["prompt"] = "consent"
+                    ["prompt"] = "consent",
+                    ["state"] = state
                 });
         }
 
