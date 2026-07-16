@@ -11,14 +11,14 @@
               :disabled="!canEdit"
               label="Account Settings"
               icon="pi pi-cog"
-              v-if="curArtist.id === curUser.id"
+              v-if="isOwnProfile"
               :severity="route.hash == '#settings' ? 'primary' : 'secondary'"
               @click="changeHash('#settings')"
             />
             <Button
               label="Notification Settings"
               icon="pi pi-cog"
-               v-if="curArtist.id === curUser.id"
+               v-if="isOwnProfile"
               :severity="route.hash == '#notification_settings' ? 'primary' : 'secondary'"
               @click="changeHash('#notification_settings')"
             />
@@ -335,6 +335,27 @@ async function loadArtistData(artistName: string): Promise<void> {
       likedArt.value = [];
     }
   } catch (e) {
+    const currentUsername = curUser.value.name?.trim();
+    const isAccountSettingsRoute = ["#settings", "#notification_settings"].includes(route.hash);
+    const isStaleOwnAccountUrl = curUser.value.id > 0
+      && !!currentUsername
+      && currentUsername.toLocaleLowerCase() !== artistName.toLocaleLowerCase()
+      && isAccountSettingsRoute;
+
+    if (isStaleOwnAccountUrl) {
+      // A rename makes the old username route unresolvable. Recover from an
+      // old bookmark/history entry using the authenticated account identity.
+      newUsername.value = currentUsername;
+      await router.replace({
+        name: "AccountPage",
+        params: { artist: currentUsername },
+        hash: route.hash
+      });
+      return;
+    }
+
+    curArtist.value = new Artist();
+    newUsername.value = "";
     toast.add({
       severity: "error",
       summary: "Error",
@@ -528,7 +549,11 @@ async function confirmDelete(): Promise<void> {
 }
 
 // Computed properties
-const isOwnProfile = computed(() => curUser.value.id === curArtist.value.id);
+const isOwnProfile = computed(() =>
+  curUser.value.id > 0
+  && curArtist.value.id > 0
+  && curUser.value.id === curArtist.value.id
+);
 // Heading that matches the viewed account
 const createdArtHeading = computed(() =>
   isOwnProfile.value ? "My Art" : `${curArtist.value.name ?? "Artist"}'s Art`
