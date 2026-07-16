@@ -8,7 +8,7 @@
 </template>
 <script setup lang="ts">
 import Button from "primevue/button";
-import { onMounted, ref } from "vue";
+import { onBeforeUnmount, onMounted, ref } from "vue";
 import router from "@/router";
 import LoginService from "@/services/LoginService";
 import Artist from "@/entities/Artist";
@@ -17,7 +17,15 @@ import { apiUrl } from "@/services/apiClient";
 const isLoggedIn = ref<boolean>(false);
 const currentUser = ref<Artist | null>(null);
 
+function handleUsernameUpdated(event: Event): void {
+  const updatedName = (event as CustomEvent<{ name?: string }>).detail?.name;
+  if (currentUser.value && updatedName) {
+    currentUser.value.name = updatedName;
+  }
+}
+
 onMounted(async () => {
+  window.addEventListener("pixel-painter:username-updated", handleUsernameUpdated);
   try {
     currentUser.value = await LoginService.getCurrentUser();
     isLoggedIn.value = true;
@@ -25,6 +33,10 @@ onMounted(async () => {
     currentUser.value = null;
     isLoggedIn.value = false;
   }
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener("pixel-painter:username-updated", handleUsernameUpdated);
 });
 
 async function buttonClick(): Promise<void> {

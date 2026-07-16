@@ -137,8 +137,9 @@ export default class LoginService {
 
   public static async updateUsername(newUsername: any): Promise<boolean> {
     try {
+      const normalizedUsername = String(newUsername ?? "").trim();
       const response = await apiFetch(
-        `/login/UpdateUsername?newUsername=${newUsername}`,
+        `/login/UpdateUsername?newUsername=${encodeURIComponent(normalizedUsername)}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" }

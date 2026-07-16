@@ -220,7 +220,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { useToast } from "primevue/usetoast";
 
 import LoginService from "@/services/LoginService";
@@ -243,6 +243,7 @@ import ArtCard from "@/components/Gallery/ArtCard.vue";
 
 const toast = useToast();
 const route = useRoute();
+const router = useRouter();
 
 const isAdmin = ref<boolean>(false);
 const curArtist = ref<Artist>(new Artist());
@@ -446,10 +447,26 @@ const errorMessage = computed<string>(() => {
 
 async function updateUsername(): Promise<void> {
   try {
-    const success = await LoginService.updateUsername(newUsername.value);
+    const updatedUsername = newUsername.value.trim();
+    const success = await LoginService.updateUsername(updatedUsername);
     if (success) {
-      curArtist.value.name = newUsername.value;
+      curArtist.value.name = updatedUsername;
+      newUsername.value = updatedUsername;
+      if (curUser.value.id === curArtist.value.id) {
+        curUser.value.name = updatedUsername;
+      }
       isEditing.value = false;
+
+      window.dispatchEvent(new CustomEvent("pixel-painter:username-updated", {
+        detail: { name: updatedUsername }
+      }));
+
+      await router.replace({
+        name: "AccountPage",
+        params: { artist: updatedUsername },
+        hash: route.hash || "#settings"
+      });
+
       toast.add({
         severity: "success",
         summary: "Updated",
